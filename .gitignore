@@ -1,0 +1,18 @@
+# Ignore all files
+**
+
+# Allow all directories
+!*/
+
+# Ignore all .idea folders
+**/.idea/
+
+# Exceptions:
+!**/*.md
+!**/*.pas
+
+# Allow .gitignore
+!.gitignore
+
+# Allow .gitkeep
+!**/.gitkeep
