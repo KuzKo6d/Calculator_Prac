@@ -7,10 +7,12 @@ type
 var
   // main block
   i: integer;
-  result: double = 0;
-  argument: double;
   res_sign: boolean = true;
+  result: double = 0;
+  arg_operation: char;
   arg_sign: boolean;
+  argument: double;
+  fin: boolean = false;
 // init block
   accuracy: double;
   out_base: start_args;
@@ -67,7 +69,7 @@ end;
 
     //Uses in main\\
 // adding procedure
-procedure adding(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
+procedure mainAdding(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
 begin
   // ++ / -- -> sum and don't change sign
   if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
@@ -93,7 +95,7 @@ begin
 end;
 
 // multiplicate procedure
-procedure multiplicate(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
+procedure mainMultiplicate(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
 begin
   // ++, -- -> +
   if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
@@ -106,7 +108,7 @@ begin
 end;
 
 // division procedure
-procedure division(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
+procedure mainDivision(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
 begin
   // ++, -- -> +
   if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
@@ -158,13 +160,51 @@ begin
       out_base[i] := tempInt;
 end;
 
+// read input procedure. read operation and num and handle finish command
+procedure mainReadInput(var arg_operation: char; var arg_sign: boolean; var argument: double; var fin: boolean);
+begin
+end;
+
+// finish procedure. finish program and writre result in all init bases
+procedure mainFinish(result: double; accuracy: double; var out_base: start_args);
+begin
+end;
+
+
 begin
   // initialize
   mainReadInit(accuracy, out_base);
 
   // write initialize results
-  writeln('the accuracy is: ', accuracy: 0: 5);
+{  writeln('the accuracy is: ', accuracy: 0: 5);
   for i:=2 to length(out_base) do
-    writeln(i - 1, ' answ base: ', out_base[i]);
+    writeln(i - 1, ' answ base: ', out_base[i]);}
+
+  // main cycle
+  while true do
+  begin
+    // read input
+    mainReadInput(arg_operation, arg_sign, argument, fin);
+    // if finish command detected
+    if fin then
+      mainFinish(result, accuracy, out_base)
+        // process operation
+    else
+      case arg_operation of
+        '+': mainAdding(result, argument, res_sign, arg_sign);
+        '*': mainMultiplicate(result, argument, res_sign, arg_sign);
+        '/': mainDivision(result, argument, res_sign, arg_sign);
+        '-':
+        begin
+          // argumen sign * (-1)
+          if arg_sign = false then
+            arg_sign := true
+          else
+            arg_sign := false;
+          // simple adding
+          mainAdding(result, argument, res_sign, arg_sign);
+        end;
+      end;
+  end;
 
 end.
