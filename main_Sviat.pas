@@ -251,7 +251,7 @@ begin
 end;
 
 (*  finish procedure. finish program and writre result in all init bases *)
-procedure mainFinish(result: double; accuracy: double; var out_base: start_args);
+procedure mainFinish(res_sign: boolean; result: double; accuracy: double; var out_base: start_args);
 var
   after_dot_res: double;
 
@@ -299,13 +299,17 @@ begin
       if (out_base[i]<=9) then
         begin
           write(out_base[i], '     ');
+          if (res_sign = false) then
+            write('-');
           to_system(out_base[i], result);
           write(' . ');
           after_dot_to_system(out_base[i], result);
         end;
       if ((out_base[i]>=10) and (out_base[i]<=99)) then
         begin
-          write(out_base[i], '    '); 
+          write(out_base[i], '    ');
+          if (res_sign = false) then
+            write('-'); 
           to_system(out_base[i], result);
           write(' . ');
           after_dot_to_system(out_base[i], result);
@@ -313,6 +317,8 @@ begin
       if (out_base[i]>99) then
         begin
           write(out_base[i], '   ');
+          if (res_sign = false) then
+            write('-');
           to_system(out_base[i], result);
           write(' . ');
           after_dot_to_system(out_base[i], result);
