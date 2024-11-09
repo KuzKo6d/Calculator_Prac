@@ -130,21 +130,48 @@ begin
     end; 
 end;
 
-{conversion of a fractional part into a number system with a base 2..256} 	{Для Кости и Гриши, стереть это!!!!!!!! Функция готова, но я не уверен, что имелась в виду эта точность, я спрошу на праке,
- если что быстро изменю}
-procedure after_dot_to_system(base: integer; after_dot_res: double);
+{this function determines how many decimal places to display}			{Для Кости и Гриши, стереть это!!!!!!!!! Тут гениальная схема Сальникова по тому сколько знаков нужно}
+function after_dot_num_func(base, count: integer; accuracy, after_dot_res: double): integer;
 var
-  i: integer;
-
+  temp_accuracy, temp_num, new_num, new_acc: double;
+  prev_num, prev_acc: integer;
 
 begin
-  if (after_dot_res = 0) then
-    write('00')
+  count:=count+1;
+  temp_num:=(after_dot_res*base);
+  temp_accuracy:=(accuracy*base);
+  prev_num:=(trunc(after_dot_res*base));
+  prev_acc:=(trunc(accuracy*base));
+  if (temp_num>=temp_accuracy) then
+    begin
+      new_num:=(temp_num-prev_num);
+      new_acc:=(temp_accuracy-prev_acc);
+      after_dot_num_func:=(after_dot_num_func(base, count, new_acc, new_num));
+    end
+ else
+  begin
+    after_dot_num_func:=(count+1);
+  end;
+end;
+
+{conversion of a fractional part into a number system with a base 2..256} 	{Для Кости и Гриши, стереть это!!!!!!!! Переводим число после запятой в кастомную систему, а потом в [0..9][a..f] представление}
+procedure after_dot_to_system(base: integer; accuracy, after_dot_res: double);
+var
+  after_dot_num, i: integer;
+
+begin
+  if ((after_dot_res = 0) or (after_dot_res>accuracy)) then
+    begin
+      write('00');
+      exit
+    end
   else
-    for i:=1 to 6 do
+    after_dot_num:=after_dot_num_func(base, 0, accuracy, after_dot_res);
+    for i:=1 to after_dot_num do
       begin
         after_dot_res:=(after_dot_res*base);
         to_16_system((trunc(after_dot_res)), false);
+        write(' ');
         after_dot_res:=(after_dot_res-(trunc(after_dot_res)));
       end;
 end;
@@ -254,45 +281,13 @@ end;
 procedure mainFinish(res_sign: boolean; result: double; accuracy: double; var out_base: start_args);
 var
   after_dot_res: double;
+  before_dot_res, i: integer
 
 begin
 
   after_dot_res:=(result-(trunc(result)));
-
-  {use of accuracy}
-  if (accuracy>=0.5) then
-    begin
-      if (after_dot_res > accuracy) then
-        begin
-          result:=((trunc(result))+1);
-          after_dot_res:=0;
-        end
-      else
-        begin
-          after_dot_res:=(result-(trunc(result));
-          result:=trunc(result);
-        end;
-    end
-  else
-    begin
-      if (after_dot_res>accuracy) then
-        if (after_dot_res>(0.5)) then
-          begin
-            result:=((trunc(result))+1);
-            after_dot_res:=0;
-          end
-        else
-          begin
-            result:=(trunc(result));
-            after_dot_res:=accuracy;
-          end
-      else
-        begin
-          after_dot_res:=(result-(trunc(result)));
-          result:=(trunc(result));
-        end;
-    end;
-
+  before_dot_res:=trunc(result);
+  
   {output with formatting}
   for i:=2 to ParamCount do
     begin
@@ -301,27 +296,29 @@ begin
           write(out_base[i], '     ');
           if (res_sign = false) then
             write('-');
-          to_system(out_base[i], result);
+          to_system(out_base[i], before_dot_res);
           write(' . ');
-          after_dot_to_system(out_base[i], result);
+          after_dot_to_system(out_base[i], accuracy, after_dot_res);
+          writeln;
         end;
       if ((out_base[i]>=10) and (out_base[i]<=99)) then
         begin
           write(out_base[i], '    ');
           if (res_sign = false) then
             write('-'); 
-          to_system(out_base[i], result);
+          to_system(out_base[i], before_dot_res);
           write(' . ');
-          after_dot_to_system(out_base[i], result);
+          after_dot_to_system(out_base[i], accuracy, after_dot_res);
+          writeln;
         end;
       if (out_base[i]>99) then
         begin
           write(out_base[i], '   ');
           if (res_sign = false) then
             write('-');
-          to_system(out_base[i], result);
+          to_system(out_base[i], before_dot_res);
           write(' . ');
-          after_dot_to_system(out_base[i], result);
+          after_dot_to_system(out_base[i], accuracy, after_dot_res);
         end;
     end;
 
