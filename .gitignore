@@ -9,6 +9,7 @@
 
 # Exceptions:
 !**/*.md
+!**/*.sh
 !**/*.pas
 
 # Allow .gitignore

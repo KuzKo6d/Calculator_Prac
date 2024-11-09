@@ -21,7 +21,7 @@ var
 (*  check overflow and compute adding *)
 function subAdding(res, arg: double): double;
 begin
-  if (res >= minDouble + arg) and (res <= maxDouble - arg) then
+  if (res <= maxDouble - arg) then
     subAdding := res + arg
   else
   begin
@@ -34,14 +34,7 @@ end;
 (*  check overflow and compute substraction *)
 function subSubtraction(res, arg: double): double;
 begin
-  if (res >= minDouble + arg) and (res >= maxDouble + arg) then
-    subSubtraction := res - arg
-  else
-  begin
-    writeln('Result overflow.');
-    writeln('(result out of double range. substraction)');
-    halt(1);
-  end;
+  subSubtraction := res - arg
 end;
 
 (*  check overflow and compute multiplication *)
