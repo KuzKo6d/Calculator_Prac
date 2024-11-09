@@ -1,210 +1,396 @@
 program main;
-uses sysutils, math;
+uses crt, sysutils, math;
 
-type
-  start_args = packed array of integer;
+{comment for the team, in my program I did not use the type proposed by Konstantin, also in the program the variable responsible for the array of number systems of the result has a different name other than out_base, 
+* for a successful assembly, change the name of this variable and data type}
+type DynArrInt = array of integer;
 
-var
-  // main block
-  i: integer;
-  res_sign: boolean = true;
-  result: double = 0;
-  arg_operation: char;
-  arg_sign: boolean;
-  argument: double;
-  fin: boolean = false;
+var 
+i: integer;
+res_sign: boolean = true;
+result: double = 0;
+arg_operation: char;
+arg_sign: boolean;
+argument: double;
+fin: boolean = false;
 // init block
-  accuracy: double;
-  out_base: start_args;
+ArrayOfAnsBases: DynArrInt;
+epsilon: double; {accuracy}
 
-    // SUB FUNCTIONS //
-// check overflow and compute adding
-function subAdding(res, arg: double): double;
+{comment for the command, an sub function for processing string parameters that checks whether the string is an integer}
+function is_int(s:string):boolean;
+var i:integer;
 begin
-  if (res + arg >= 5.0 * Power(10, -324)) and (res + arg <= 1.7 * Power(10, 308)) then
-    subAdding := res + arg
+  is_int:= true;
+  if length(s) = 0 then
+    is_int := false;
+  for i:=1 to length(s) do
+    if not((ord('0') <= ord(s[i])) and (ord('9') >= ord(s[i]))) then
+    begin
+      is_int:=false;
+      break;
+    end;
 end;
 
-// check overflow and compute adding
-function subSubtraction(res, arg: double): double;
-begin
-  if (res - arg >= 5.0 * Power(10, -324)) and (res - arg <= 1.7 * Power(10, 308)) then
-    subSubtraction := res - arg
-end;
 
-// check overflow and compute multiplication
-function subMultiplicate(res, arg: double): double;
+{comment for the command, an sub function for processing string parameters that checks whether the string is a real number}
+function is_double(s:string):boolean;
+var s1, s2: string;
+p:integer;
 begin
-  // check overflow
-  if (res * arg >= 5.0 * Power(10, -324)) and (res * arg <= 1.7 * Power(10, 308)) then
-    subMultiplicate := res * arg
-  else
+  is_double:= true;
+  p:=pos('.', s);
+  if p = 0 then
   begin
-    writeln('Result overflow.');
-    writeln('(result out of double range)');
+    is_double:=false;
+    exit;
+  end;
+  s1:=copy(s, 1, pos('.', s) - 1);
+  s2:=copy(s, pos('.', s)+1, length(s) - pos('.', s));
+  if not(is_int(s1) and is_int(s2)) then
+    is_double:=false
+  
+end;
+
+procedure mainFinish(result: double; accuracy: double; var out_base: DynArrInt);
+begin
+end;
+
+{comment for the team, my working command line parameter processing function, already shown to Salnikov and approved by him}
+procedure mainReadInit(var A: DynArrInt; var accurasy:double);
+var kol, i :integer; 
+begin
+  kol:=ParamCount();
+  if kol < 2 then
+  begin
+    writeln('Incorrect number of parameters. There must be more than 1 parameters!');
     halt(1);
   end;
-end;
-
-// check overflow and compute division
-function subDivision(res, arg: double): double;
-begin
-  // catch division by zero
-  if arg = 0 then
+  if not(is_double(ParamStr(1))) then
   begin
-    writeln('Division by zero.');
-    writeln('(can"t divide by zero)');
+    writeln('Incorrect type of first parameter. The first parameter must be a real number!');
     halt(1);
   end
-      // check overflow
-  else if (res / arg >= 5.0 * Power(10, -324)) and (res / arg <= 1.7 * Power(10, 308)) then
-    subDivision := res / arg
   else
+    accurasy:=strtofloat(ParamStr(1));
+  for i:=2 to kol do
   begin
-    writeln('Result overflow.');
-    writeln('(result out of double range)');
-    halt(1);
-  end;
-end;
-
-    //Uses in main\\
-// adding procedure
-procedure mainAdding(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
-begin
-  // ++ / -- -> sum and don't change sign
-  if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
-    res := subAdding(res, arg)
-  else
-  begin
-    // first > second -> first - sec
-    if res > arg then
+    if not(is_int(ParamStr(i))) then
     begin
-      res := subSubtraction(res, arg);
-      // if result < 0
-      if res_sign < arg_sign then
-        res_sign := false;
-    end
-        // first < second -> sec - first
-    else
-    begin
-      res := subSubtraction(arg, res);
-      if res_sign > arg_sign then
-        res_sign := false;
+      writeln('Incorrect type of parameter. All parameters after the first must be integers!');
+      halt(1);
     end;
   end;
+  SetLength(A, kol-1);
+  for i:=2 to kol do
+    A[i]:=StrToInt(ParamStr(i));
+  
 end;
 
-// multiplicate procedure
-procedure mainMultiplicate(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
+{comment for the team, the first sub function, nothing serious, just checking whether a character belongs to the hexadecimal number system, as you understand, can also be excluded for code personalization}
+function proverkana16(c:char):boolean;
 begin
-  // ++, -- -> +
-  if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
-    res_sign := true
-      // +-, -+ -> -
-  else
-    res_sign := false;
-  // write result
-  res := subMultiplicate(res, arg);
+	proverkana16:=false;
+	if (((ord(c)>=ord('0')) and (ord(c)<=ord('9'))) or ((ord(c)>=ord('a')) and (ord(c)<=ord('f')))) then
+		proverkana16:=true;
 end;
 
-// division procedure
-procedure mainDivision(var res: double; arg: double; var res_sign: boolean; arg_sign: boolean);
+{comment for the team, the second sub procedure that is called if we find any input error, for a normal build it is necessary to remove halt(1) from it, because halt will already be called in mainFinish}
+{also, this function is a moment that can be changed to personalize the code}
+procedure finByMistake(result:double; accuracy:double; var arr: DynArrInt);
 begin
-  // ++, -- -> +
-  if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
-    res_sign := true
-      // +-, -+ -> -
-  else
-    res_sign := false;
-  // write result
-  res := subDivision(res, arg);
+	writeln('The program terminated due to an input error, the last result received:');
+	mainFinish(result, accuracy, arr);
+	halt(1);
 end;
 
-
-    // MAIN FUNCTIONS //
-// init procedure. read start arguments
-procedure mainReadInit(var accuracy: double; var out_base: start_args);
-var
-  i: integer;
-  tempInt: longInt;
+{comment for the team, a working procedure for processing input parameters, processing all exceptional operations with spaces, finish, comments inside the input data and almost accepted by Salnikov}
+procedure mainReadInput(var operation: char; var znak: boolean; var chislo: double; var fin: boolean); 
+var base, i , fin_fl, num:integer;
+fl_operation, fl_znak, fl_base, fl_dot, fl_comment, fl_nospaces:boolean;
+c, d: char;
+operation_str:string;
 begin
-  // init out_base array
-  setlength(out_base, ParamCount);
+	operation_str:='+-*/';
+	fl_operation:=false;
+	fl_dot:=true;
+	fl_znak:=true;
+	fl_base:=true;
+	fl_comment:=false;
+	fl_nospaces:=false;
+	chislo:=0;
+	znak:=true;
+	fin_fl:=0;
+	fin:=false;
+	base:=0;
+	repeat
+		num:=0;
+		read(c);
+		
+		{checking the line for comments}
+		if ord(c) = ord('#') then
+		begin
+			fl_comment:=true;
+			continue;
+		end;
+		
+		{Checking for the absence of spaces where they are prohibited by the terms}	
+		if ((fl_nospaces) and (ord(c) = ord(' '))) then
+			finByMistake(result, epsilon, ArrayOfAnsBases);
+		
+		{the condition for skipping all spaces and tabs, or if its comment}
+		if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment)) then
+			continue;
+		
+		{entering the operation sign or checking the first significant character of the string at the beginning of the word finish}
+		if not(fl_operation) then 
+		begin
+			if (pos(c, operation_str) <> 0) then
+			begin
+				fl_operation:=true;
+				fl_nospaces:=true;
+				fl_base:=false;
+				operation:=c;
+				continue;
+			end
+			else
+			begin
+				if ord(c) = ord('f') then
+				begin
+					fin_fl:=1;
+					continue;
+				end
+				else
+			
+					if ((ord(c) = ord('i')) and (fin_fl = 1)) then
+					begin
+						fin_fl:=2;
+						continue;
+					end
+					else
 
-  // check count of args (min 2, max N)
-  if (ParamCount < 2) then
-  begin
-    writeln('Incorrect count of arguments.');
-    writeln('(min: 2)');
-    halt(1);
-  end;
+						if ((ord(c) = ord('n')) and (fin_fl = 2)) then
+						begin
+							fin_fl:=3;
+							continue;
+						end
+						else
+					
+							if ((ord(c) = ord('i')) and (fin_fl = 3)) then
+							begin
+								fin_fl:=4;
+								continue;
+							end
+							else
+					
+								if ((ord(c) = ord('s')) and (fin_fl = 4)) then
+								begin
+									fin_fl:=5;
+									continue;
+								end
+								else
+					
+									if ((ord(c) = ord('h')) and (fin_fl = 5)) then
+									begin
+										fin:=true;
+										continue;
+									end
+									else
+										finByMistake(result, epsilon, ArrayOfAnsBases);
+			end;
+		end;
+				
+		{entering the number system}
+		if not(fl_base) then 
+		begin
+			if ((ord(c)>=ord('0')) and (ord(c)<=ord('9'))) then
+			begin
+				while (ord(c) <> ord(':')) do
+				begin
+					base:=base*10 + (ord(c) - ord('0'));
+					read(c);
+					if ((ord(c)>=ord('0')) and (ord(c)<=ord('9'))) then
+						continue
+					else
+						break;
+				end;
+			end;
+			if ((base > 256) or (base < 2)) then
+				finByMistake(result, epsilon, ArrayOfAnsBases);
+			if (ord(c) = ord(':')) and (base <> 0) then
+			begin
+				fl_base:=true;
+				fl_nospaces:=false;
+				fl_znak:=false;
+				read(d);
+				if (ord(d) <> ord(' ')) then
+					finByMistake(result, epsilon, ArrayOfAnsBases);
+				continue;
+			end
+			else
+				finByMistake(result, epsilon, ArrayOfAnsBases);
+		end;
+		
+				
+		{entering a number sign}	
+		if not(fl_znak) then //input of sign
+			case c of
+				'+':
+				begin
+					znak:=true;
+					fl_znak:=true;
+					fl_dot:=false;
+					continue;
+				end;
+				'-':
+				begin
+					znak:=false;
+					fl_znak:=true;
+					fl_dot:=false;
+					continue;
+				end
+			else
+				if proverkana16(c) then
+				begin
+					znak:=true;
+					fl_znak:=true;
+					fl_dot:=false;
+				end
+				else
+					finByMistake(result, epsilon, ArrayOfAnsBases);
+		end;
+		
+		{entering an integer part of a number}
+		i:=0;
+		
+		if not(fl_dot) then
+		begin
+			if (proverkana16(c)) then
+			begin
+				while (ord(c) <> ord('.')) do
+				begin
+					i:=i+1;
+					read(d);
+					if (proverkana16(c) and proverkana16(d)) then
+					begin
+						if ((ord(c)>=ord('0')) and (ord(c)<=ord('9'))) then
+							num:=num + 16*(ord(c) - ord('0'))						
+						else
+							num:=num + 16*(ord(c) - ord('a'));
+						if ((ord(d)>=ord('0')) and (ord(d)<=ord('9'))) then
+							num:=num + (ord(d) - ord('0'))
+						else
+							num:=num + (ord(d) - ord('a'));
+					end
+					else
+						finByMistake(result, epsilon, ArrayOfAnsBases);
+					
+					if (num >= base) then
+						finByMistake(result, epsilon, ArrayOfAnsBases)
+					else
+					begin
+						chislo:=chislo*base+num;
+					end;
+					num:=0;
+					read(c);
+					if (ord(c) = ord(' ')) then
+					begin
+						read(c);
+						continue;
+					end;
+					if (proverkana16(c)) then
+						continue
+					else
+						break;
+				end;
+			end;
+			if ((ord(c) = ord('.')) and (i <> 0)) then
+			begin
+				fl_dot:=true;
+				i:=0;
+				continue;
+			end
+			else
+				finByMistake(result, epsilon, ArrayOfAnsBases);
+		end;
+		
+		{entering the fractional part of a number}
+		if fl_dot and fl_operation and fl_znak and fl_base then
+		begin
+			if (proverkana16(c)) then
+			begin
+				i:=1;
+				while (ord(c) <> 10) do
+				begin
+					read(d);
+					if (proverkana16(c) and proverkana16(d)) then
+					begin
+						if ((ord(c)>=ord('0')) and (ord(c)<=ord('9'))) then
+							num:=num + 16*(ord(c) - ord('0'))						
+						else
+							num:=num + 16*(ord(c) - ord('a'));
+						if ((ord(d)>=ord('0')) and (ord(d)<=ord('9'))) then
+							num:=num + (ord(d) - ord('0'))
+						else
+							num:=num + (ord(d) - ord('a'));
+					end
+					else
+					begin
+						writeln('here1');
+						finByMistake(result, epsilon, ArrayOfAnsBases);
+					end;
+					
+					if (num >= base) then
+					begin
+						writeln('here2');
+						finByMistake(result, epsilon, ArrayOfAnsBases);
+					end
+					else
+					begin
+						chislo:=chislo + num / exp(i * LN(base));
+					end;
+					num:=0;
+					i:=i+1;
+					read(c);
+					if (ord(c) = ord(' ')) then
+					begin
+						while (ord(c) = ord(' ')) do
+						begin
+							read(c);
+						end;
+					end;
+					if (ord(c) = ord('#')) then
+					begin
+						fl_comment:=true;
+						break;
+					end;
+					if (proverkana16(c)) then
+						continue
+					else
+						break;
+				end;
+			end;
+			if (fl_comment = true) then
+				continue;
+			if ((ord(c) = 10) and (i <> 0)) then
+			begin
+				i:=0;
+				continue;
+			end
+			else
+			begin
+				writeln('here');
+				finByMistake(result, epsilon, ArrayOfAnsBases);
+			end;
+		end;
+	until (ord(c) = 10) or (fin = true); 
 
-  // check if accuracy value out of condition and try to StrToFloat
-  if not(TryStrToFLoat(ParamStr(1), accuracy)) or (accuracy < 0) or (accuracy > 1) then
-  begin
-    writeln('Unexpected accuracy value.');
-    writeln('(min: 0, max: 1)');
-    halt(1);
-  end;
-
-  // check if base value out of condition and try to StrToInt
-  for i:=2 to ParamCount do
-    if not TryStrToInt(ParamStr(i), tempInt) or (tempInt < 2) or (tempInt > 256) then
-    begin
-      writeln('Unexpected base value.');
-      writeln('(min: 2, max: 256)');
-      halt(1);
-    end
-        // write base value to array if it's okay
-    else
-      out_base[i] := tempInt;
 end;
 
-// read input procedure. read operation and num and handle finish command
-procedure mainReadInput(var arg_operation: char; var arg_sign: boolean; var argument: double; var fin: boolean);
 begin
-end;
-
-// finish procedure. finish program and writre result in all init bases
-procedure mainFinish(result: double; accuracy: double; var out_base: start_args);
-begin
-end;
-
-
-begin
-  // initialize
-  mainReadInit(accuracy, out_base);
-
-  // write initialize results
-{  writeln('the accuracy is: ', accuracy: 0: 5);
-  for i:=2 to length(out_base) do
-    writeln(i - 1, ' answ base: ', out_base[i]);}
-
-  // main cycle
-  while true do
-  begin
-    // read input
-    mainReadInput(arg_operation, arg_sign, argument, fin);
-    // if finish command detected
-    if fin then
-      mainFinish(result, accuracy, out_base)
-        // process operation
-    else
-      case arg_operation of
-        '+': mainAdding(result, argument, res_sign, arg_sign);
-        '*': mainMultiplicate(result, argument, res_sign, arg_sign);
-        '/': mainDivision(result, argument, res_sign, arg_sign);
-        '-':
-        begin
-          // argumen sign * (-1)
-          if arg_sign = false then
-            arg_sign := true
-          else
-            arg_sign := false;
-          // simple adding
-          mainAdding(result, argument, res_sign, arg_sign);
-        end;
-      end;
-  end;
-
+	//fin:=true;
+	mainReadInput(arg_operation,arg_sign,result,fin);
+	if (fin = true) then
+		writeln('finish found');
+	writeln('Введеннео число ', result:5:5);
 end.
