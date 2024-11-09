@@ -633,7 +633,11 @@ begin
     mainReadInput(arg_operation, arg_sign, argument, fin);
     (*  if finish command detected *)
     if fin then
-      mainFinish(res_sign, result, accuracy, out_base)
+      begin
+      mainFinish(res_sign, result, accuracy, out_base);
+      halt(0);
+      end
+
         (*  process operation *)
     else
       case arg_operation of
