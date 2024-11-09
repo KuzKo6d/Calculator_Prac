@@ -89,7 +89,7 @@ procedure finByMistake(result: double; accuracy: double; var arr: start_args);
 begin
   writeln('The program terminated due to an input error, the last result received:');
   mainFinish(res_sign, result, accuracy, arr);
-  halt(1);
+  halt(0);
 end;
 
 {conversion of a number into a number system with a base of 16} 			{Для Кости и Гриши, стереть это!!!!!  Эта функция переводит числа из следующей функции в формат [0..9][a..f]}
@@ -458,11 +458,11 @@ begin
             if ((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) then
               num := num + 16 * (ord(c) - ord('0'))
             else
-              num := num + 16 * (ord(c) - ord('a'));
+              num := num + 16 * (10 + ord(c) - ord('a'));
             if ((ord(d) >= ord('0')) and (ord(d) <= ord('9'))) then
               num := num + (ord(d) - ord('0'))
             else
-              num := num + (ord(d) - ord('a'));
+              num := num + (10 +ord(d) - ord('a'));
           end
           else
             finByMistake(result, accuracy, out_base);
@@ -510,23 +510,17 @@ begin
             if ((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) then
               num := num + 16 * (ord(c) - ord('0'))
             else
-              num := num + 16 * (ord(c) - ord('a'));
+              num := num + 16 * (10 + ord(c) - ord('a'));
             if ((ord(d) >= ord('0')) and (ord(d) <= ord('9'))) then
               num := num + (ord(d) - ord('0'))
             else
-              num := num + (ord(d) - ord('a'));
+              num := num + 10 + (ord(d) - ord('a'));
           end
           else
-          begin
-            writeln('here1');
             finByMistake(result, accuracy, out_base);
-          end;
 
           if (num >= base) then
-          begin
-            writeln('here2');
-            finByMistake(result, accuracy, out_base);
-          end
+            finByMistake(result, accuracy, out_base)
           else
           begin
             chislo := chislo + num / exp(i * LN(base));
@@ -633,11 +627,10 @@ begin
     mainReadInput(arg_operation, arg_sign, argument, fin);
     (*  if finish command detected *)
     if fin then
-      begin
+    begin
       mainFinish(res_sign, result, accuracy, out_base);
       halt(0);
-      end
-
+    end
         (*  process operation *)
     else
       case arg_operation of
