@@ -43,8 +43,13 @@ end;
 (*  check overflow and compute multiplication *)
 function subMultiplicate(res, arg: double): double;
 begin
+  if (arg=0) then
+    begin
+      res:=0;
+      res_sign:=true;
+    end
   (*  check overflow *)
-  if (res >= minDouble / arg) and (res <= maxDouble / arg) then
+  else if (res >= minDouble / arg) and (res <= maxDouble / arg) then
     subMultiplicate := res * arg
   else
   begin
