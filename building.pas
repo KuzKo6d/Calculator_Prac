@@ -294,7 +294,7 @@ end;
 procedure mainReadInput(var operation: char; var znak: boolean; var chislo: double; var fin: boolean);
 var
   base, i, fin_fl, num: integer;
-  fl_operation, fl_znak, fl_base, fl_dot, fl_comment, fl_nospaces: boolean;
+  fl_operation, fl_znak, fl_base, fl_dot, fl_comment: boolean;
   c, d: char;
   operation_str: string;
 begin
@@ -304,7 +304,6 @@ begin
   fl_znak := true;
   fl_base := true;
   fl_comment := false;
-  fl_nospaces := false;
   chislo := 0;
   znak := true;
   fin_fl := 0;
@@ -321,10 +320,6 @@ begin
       continue;
     end;
 
-      {Checking for the absence of spaces where they are prohibited by the terms}
-    if ((fl_nospaces) and (ord(c) = ord(' '))) then
-      finByMistake(result, accuracy, out_base);
-
       {the condition for skipping all spaces and tabs, or if its comment}
     if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment)) then
       continue;
@@ -335,7 +330,6 @@ begin
       if (pos(c, operation_str) <> 0) then
       begin
         fl_operation := true;
-        fl_nospaces := true;
         fl_base := false;
         operation := c;
         continue;
@@ -402,7 +396,6 @@ begin
       if (ord(c) = ord(':')) and (base <> 0) then
       begin
         fl_base := true;
-        fl_nospaces := false;
         fl_znak := false;
         read(d);
         if (ord(d) <> ord(' ')) then
