@@ -17,10 +17,10 @@ var
   out_base: start_args;
 
     (*  SUB FUNCTIONS // *)
-(*  some functions use main finish inside *)
+(*  some functions use mainFinish and finByErr inside *)
 procedure mainFinish(res_sign: boolean; result: double; accuracy: double; var out_base: start_args); forward;
 
-procedure finByMistake(result: double; accuracy: double; var arr: start_args); forward;
+procedure finByErr(result: double; accuracy: double; var arr: start_args); forward;
 
 (*  check overflow and compute adding *)
 function subAdding(res, arg: double): double;
@@ -81,25 +81,24 @@ begin
   end;
 end;
 
-    {comment for the team, the first sub function, nothing serious, just checking whether a character belongs to the hexadecimal number system, as you understand, can also be excluded for code personalization}
-function proverkana16(c: char): boolean;
+(*  check if num is in 16 base *)
+function checkIf16(c: char): boolean;
 begin
-  proverkana16 := false;
+  checkIf16 := false;
   if (((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) or ((ord(c) >= ord('a')) and (ord(c) <= ord('f')))) then
-    proverkana16 := true;
+    checkIf16 := true;
 end;
 
-{comment for the team, the second sub procedure that is called if we find any input error, for a normal build it is necessary to remove halt(1) from it, because halt will already be called in mainFinish}
-{also, this function is a moment that can be changed to personalize the code}
-procedure finByMistake(result: double; accuracy: double; var arr: start_args);
+(* finish program with exitcode 1 and write last result *)
+procedure finByErr(result: double; accuracy: double; var arr: start_args);
 begin
   writeln('The program terminated due to an input error, the last result received:');
   mainFinish(res_sign, result, accuracy, arr);
   halt(1);
 end;
 
-{conversion of a number into a number system with a base of 16}      {Для Кости и Гриши, стереть это!!!!!  Эта функция переводит числа из следующей функции в формат [0..9][a..f]}
-procedure to_16_system(res: integer; flag: boolean);
+{conversion of a number into a number system with a base of 16}
+procedure convertTo16(res: integer; flag: boolean);
 var
   new_res: integer;
 
@@ -123,34 +122,33 @@ begin
   begin
     new_res := (res div 16);
     flag := true;
-    to_16_system(new_res, flag);
-    to_16_system(res mod 16, flag);
+    convertTo16(new_res, flag);
+    convertTo16(res mod 16, flag);
   end;
 end;
 
-{conversion of trunc(res) into a number system with a base of 2..256}    {Для Кости и Гриши, стереть это!!!!!!!!  Эта функция берет целую часть от результата и сначала переводит в кастомную систему
- счисления, а потом уже эти числа выводит в представлении [0..9][a..f]}
-procedure to_system(base: integer; res: longint);
+{conversion of trunc(res) into a number system with a base of 2..256}
+procedure beforeDotToSys(base: integer; res: longint);
 var
   new_res: longint;
 
 begin
   if ((res div base) = 0) then
   begin
-    to_16_system(res, false);
+    convertTo16(res, false);
     write(' ');
   end
   else
   begin
     new_res := (res div base);
-    to_system(base, new_res);
-    to_16_system((res mod base), false);
+    beforeDotToSys(base, new_res);
+    convertTo16((res mod base), false);
     write(' ');
   end;
 end;
 
-{this function determines how many decimal places to display}      {Для Кости и Гриши, стереть это!!!!!!!!! Тут гениальная схема Сальникова по тому сколько знаков нужно}
-function after_dot_num_func(base, count: integer; accuracy, after_dot_res: double): integer;
+{this function determines how many decimal places to display}
+function afterDotLength(base, count: integer; accuracy, after_dot_res: double): integer;
 var
   temp_accuracy, temp_num, new_num, new_acc: double;
   prev_num, prev_acc: integer;
@@ -165,16 +163,16 @@ begin
   begin
     new_num := (temp_num - prev_num);
     new_acc := (temp_accuracy - prev_acc);
-    after_dot_num_func := (after_dot_num_func(base, count, new_acc, new_num));
+    afterDotLength := (afterDotLength(base, count, new_acc, new_num));
   end
   else
   begin
-    after_dot_num_func := (count + 1);
+    afterDotLength := (count + 1);
   end;
 end;
 
-{conversion of a fractional part into a number system with a base 2..256}  {Для Кости и Гриши, стереть это!!!!!!!! Переводим число после запятой в кастомную систему, а потом в [0..9][a..f] представление}
-procedure after_dot_to_system(base: integer; accuracy, after_dot_res: double);
+{conversion of a fractional part into a number system with a base 2..256}
+procedure afterDotToSys(base: integer; accuracy, after_dot_res: double);
 var
   after_dot_num, i: integer;
 
@@ -185,11 +183,11 @@ begin
     exit
   end
   else
-    after_dot_num := after_dot_num_func(base, 0, accuracy, after_dot_res);
+    after_dot_num := afterDotLength(base, 0, accuracy, after_dot_res);
   for i:=1 to after_dot_num do
   begin
     after_dot_res := (after_dot_res * base);
-    to_16_system((trunc(after_dot_res)), false);
+    convertTo16((trunc(after_dot_res)), false);
     write(' ');
     after_dot_res := (after_dot_res - (trunc(after_dot_res)));
   end;
@@ -289,28 +287,22 @@ begin
       out_base[i] := tempInt;
 end;
 
-(*  read input procedure. read operation and num and handle finish command *)
-procedure mainReadInput_head_reference(var arg_operation: char; var arg_sign: boolean; var argument: double; var fin: boolean);
-begin
-end;
-
-{comment for the team, a working procedure for processing input parameters, processing all exceptional operations with spaces, finish, comments inside the input data and almost accepted by Salnikov}
-procedure mainReadInput(var operation: char; var znak: boolean; var chislo: double; var fin: boolean);
+(*  read input line. detect finish and komments *)
+procedure mainReadInput(var operation: char; var sign: boolean; var argument: double; var fin: boolean);
 var
   base, i, fin_fl, num: integer;
-  fl_operation, fl_znak, fl_base, fl_dot, fl_comment: boolean;
+  fl_operation, fl_sign, fl_base, fl_dot, fl_comment: boolean;
   c, d: char;
   operation_str, fin_str: string;
 begin
   operation_str := '+-*/';
   fl_operation := false;
   fl_dot := true;
-  fl_znak := true;
+  fl_sign := true;
   fl_base := true;
   fl_comment := false;
-  chislo := 0;
-  znak := true;
-  fin_fl := 0;
+  argument := 0;
+  sign := true;
   fin := false;
   base := 0;
   repeat
@@ -357,7 +349,7 @@ begin
             continue;
           end
           else
-            finByMistake(result, accuracy, out_base);
+            finByErr(result, accuracy, out_base);
         end;
       end;
     end;
@@ -378,47 +370,47 @@ begin
         end;
       end;
       if ((base > 256) or (base < 2)) then
-        finByMistake(result, accuracy, out_base);
+        finByErr(result, accuracy, out_base);
       if (ord(c) = ord(':')) and (base <> 0) then
       begin
         fl_base := true;
-        fl_znak := false;
+        fl_sign := false;
         read(d);
         if (ord(d) <> ord(' ')) then
-          finByMistake(result, accuracy, out_base);
+          finByErr(result, accuracy, out_base);
         continue;
       end
       else
-        finByMistake(result, accuracy, out_base);
+        finByErr(result, accuracy, out_base);
     end;
 
 
       {entering a number sign}
-    if not(fl_znak) then //input of sign
+    if not(fl_sign) then //input of sign
       case c of
         '+':
         begin
-          znak := true;
-          fl_znak := true;
+          sign := true;
+          fl_sign := true;
           fl_dot := false;
           continue;
         end;
         '-':
         begin
-          znak := false;
-          fl_znak := true;
+          sign := false;
+          fl_sign := true;
           fl_dot := false;
           continue;
         end
       else
-        if proverkana16(c) then
+        if checkIf16(c) then
         begin
-          znak := true;
-          fl_znak := true;
+          sign := true;
+          fl_sign := true;
           fl_dot := false;
         end
         else
-          finByMistake(result, accuracy, out_base);
+          finByErr(result, accuracy, out_base);
       end;
 
       {entering an integer part of a number}
@@ -426,13 +418,13 @@ begin
 
     if not(fl_dot) then
     begin
-      if (proverkana16(c)) then
+      if (checkIf16(c)) then
       begin
         while (ord(c) <> ord('.')) do
         begin
           i := i + 1;
           read(d);
-          if (proverkana16(c) and proverkana16(d)) then
+          if (checkIf16(c) and checkIf16(d)) then
           begin
             if ((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) then
               num := num + 16 * (ord(c) - ord('0'))
@@ -444,13 +436,13 @@ begin
               num := num + (10 + ord(d) - ord('a'));
           end
           else
-            finByMistake(result, accuracy, out_base);
+            finByErr(result, accuracy, out_base);
 
           if (num >= base) then
-            finByMistake(result, accuracy, out_base)
+            finByErr(result, accuracy, out_base)
           else
           begin
-            chislo := chislo * base + num;
+            argument := argument * base + num;
           end;
           num := 0;
           read(c);
@@ -459,7 +451,7 @@ begin
             read(c);
             continue;
           end;
-          if (proverkana16(c)) then
+          if (checkIf16(c)) then
             continue
           else
             break;
@@ -472,19 +464,19 @@ begin
         continue;
       end
       else
-        finByMistake(result, accuracy, out_base);
+        finByErr(result, accuracy, out_base);
     end;
 
       {entering the fractional part of a number}
-    if fl_dot and fl_operation and fl_znak and fl_base then
+    if fl_dot and fl_operation and fl_sign and fl_base then
     begin
-      if (proverkana16(c)) then
+      if (checkIf16(c)) then
       begin
         i := 1;
         while (ord(c) <> 10) do
         begin
           read(d);
-          if (proverkana16(c) and proverkana16(d)) then
+          if (checkIf16(c) and checkIf16(d)) then
           begin
             if ((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) then
               num := num + 16 * (ord(c) - ord('0'))
@@ -496,13 +488,13 @@ begin
               num := num + 10 + (ord(d) - ord('a'));
           end
           else
-            finByMistake(result, accuracy, out_base);
+            finByErr(result, accuracy, out_base);
 
           if (num >= base) then
-            finByMistake(result, accuracy, out_base)
+            finByErr(result, accuracy, out_base)
           else
           begin
-            chislo := chislo + num / exp(i * LN(base));
+            argument := argument + num / exp(i * LN(base));
           end;
           num := 0;
           i := i + 1;
@@ -519,7 +511,7 @@ begin
             fl_comment := true;
             break;
           end;
-          if (proverkana16(c)) then
+          if (checkIf16(c)) then
             continue
           else
             break;
@@ -535,7 +527,7 @@ begin
       else
       begin
         writeln('here');
-        finByMistake(result, accuracy, out_base);
+        finByErr(result, accuracy, out_base);
       end;
     end;
   until (ord(c) = 10) or (fin = true);
@@ -550,20 +542,18 @@ var
   i: integer;
 
 begin
-  writeln('result value is: ', result:0:5);
-
   after_dot_res := (result - (trunc(result)));
   before_dot_res := trunc(result);
 
-  {output with formatting}
+  (*  output with formatting *)
   for i:=2 to ParamCount do
   begin
     write(out_base[i]: 3, ':  ');
     if (res_sign = false) then
       write('-');
-    to_system(out_base[i], before_dot_res);
+    beforeDotToSys(out_base[i], before_dot_res);
     write('. ');
-    after_dot_to_system(out_base[i], accuracy, after_dot_res);
+    afterDotToSys(out_base[i], accuracy, after_dot_res);
     writeln;
   end;
 
