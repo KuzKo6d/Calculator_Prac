@@ -6,7 +6,6 @@ type
 
 var
   (*  main block *)
-  i: integer;
   res_sign: boolean = true;
   result: double = 0;
   arg_operation: char;
@@ -20,6 +19,8 @@ var
     (*  SUB FUNCTIONS // *)
 (*  some functions use main finish inside *)
 procedure mainFinish(res_sign: boolean; result: double; accuracy: double; var out_base: start_args); forward;
+
+procedure finByMistake(result: double; accuracy: double; var arr: start_args); forward;
 
 (*  check overflow and compute adding *)
 function subAdding(res, arg: double): double;
@@ -43,12 +44,12 @@ end;
 (*  check overflow and compute multiplication *)
 function subMultiplicate(res, arg: double): double;
 begin
-  if (arg=0) then
-    begin
-      res:=0;
-      res_sign:=true;
-    end
-  (*  check overflow *)
+  if (arg = 0) then
+  begin
+    res := 0;
+    res_sign := true;
+  end
+      (*  check overflow *)
   else if (res >= minDouble / arg) and (res <= maxDouble / arg) then
     subMultiplicate := res * arg
   else
@@ -94,58 +95,58 @@ procedure finByMistake(result: double; accuracy: double; var arr: start_args);
 begin
   writeln('The program terminated due to an input error, the last result received:');
   mainFinish(res_sign, result, accuracy, arr);
-  halt(0);
+  halt(1);
 end;
 
-{conversion of a number into a number system with a base of 16} 			{Для Кости и Гриши, стереть это!!!!!  Эта функция переводит числа из следующей функции в формат [0..9][a..f]}
+{conversion of a number into a number system with a base of 16}      {Для Кости и Гриши, стереть это!!!!!  Эта функция переводит числа из следующей функции в формат [0..9][a..f]}
 procedure to_16_system(res: integer; flag: boolean);
 var
   new_res: integer;
 
 begin
   if ((res div 16) = 0) then
-    begin
-      if (flag = false) then
-        write('0');
-      case res of
-        0: write('0');
-        1..9: write(res);
-        10: write('a');
-        11: write('b');
-        12: write('c');
-        13: write('d');
-        14: write('e');
-        15: write('f');
-      end;
-    end
-  else
-    begin
-      new_res:=(res div 16);
-      flag:=true;
-      to_16_system(new_res, flag);
-      to_16_system(res mod 16, flag);
+  begin
+    if (flag = false) then
+      write('0');
+    case res of
+      0: write('0');
+      1..9: write(res);
+      10: write('a');
+      11: write('b');
+      12: write('c');
+      13: write('d');
+      14: write('e');
+      15: write('f');
     end;
+  end
+  else
+  begin
+    new_res := (res div 16);
+    flag := true;
+    to_16_system(new_res, flag);
+    to_16_system(res mod 16, flag);
+  end;
 end;
 
-{conversion of trunc(res) into a number system with a base of 2..256} 		{Для Кости и Гриши, стереть это!!!!!!!!  Эта функция берет целую часть от результата и сначала переводит в кастомную систему
+{conversion of trunc(res) into a number system with a base of 2..256}    {Для Кости и Гриши, стереть это!!!!!!!!  Эта функция берет целую часть от результата и сначала переводит в кастомную систему
  счисления, а потом уже эти числа выводит в представлении [0..9][a..f]}
-procedure to_system(base: integer; res: longint);
+procedure to_system(base, res: integer);
 var
   new_res: longint;
 
 begin
   if ((res div base) = 0) then
-    begin
-      to_16_system(res, false);
-      write(' ');
-    end
+  begin
+    to_16_system(res, false);
+    write(' ');
+  end
   else
-    begin
-      new_res:=(res div base);
-      to_system(base, new_res);
-      to_16_system((res mod base), false);
-      write(' ');
-    end;
+  begin
+    new_res := (res div base);
+    to_system(base, new_res);
+    to_16_system((res mod base), false);
+    write(' ');
+  end;
 end;
 
 {this function determines how many decimal places to display}			{Для Кости и Гриши, стереть это!!!!!!!!! Тут гениальная схема Сальникова по тому сколько знаков нужно}
@@ -155,43 +156,43 @@ var
   prev_num, prev_acc: integer;
 
 begin
-  count:=count+1;
-  temp_num:=(after_dot_res*base);
-  temp_accuracy:=(accuracy*base);
-  prev_num:=(trunc(after_dot_res*base));
-  prev_acc:=(trunc(accuracy*base));
-  if (temp_num>=temp_accuracy) then
-    begin
-      new_num:=(temp_num-prev_num);
-      new_acc:=(temp_accuracy-prev_acc);
-      after_dot_num_func:=(after_dot_num_func(base, count, new_acc, new_num));
-    end
- else
+  count := count + 1;
+  temp_num := (after_dot_res * base);
+  temp_accuracy := (accuracy * base);
+  prev_num := (trunc(after_dot_res * base));
+  prev_acc := (trunc(accuracy * base));
+  if (temp_num >= temp_accuracy) then
   begin
-    after_dot_num_func:=(count+1);
+    new_num := (temp_num - prev_num);
+    new_acc := (temp_accuracy - prev_acc);
+    after_dot_num_func := (after_dot_num_func(base, count, new_acc, new_num));
+  end
+  else
+  begin
+    after_dot_num_func := (count + 1);
   end;
 end;
 
-{conversion of a fractional part into a number system with a base 2..256} 	{Для Кости и Гриши, стереть это!!!!!!!! Переводим число после запятой в кастомную систему, а потом в [0..9][a..f] представление}
+{conversion of a fractional part into a number system with a base 2..256}  {Для Кости и Гриши, стереть это!!!!!!!! Переводим число после запятой в кастомную систему, а потом в [0..9][a..f] представление}
 procedure after_dot_to_system(base: integer; accuracy, after_dot_res: double);
 var
   after_dot_num, i: integer;
 
 begin
-  if ((after_dot_res = 0) or (after_dot_res>accuracy)) then
-    begin
-      write('00');
-      exit
-    end
+  if ((after_dot_res = 0) or (after_dot_res > accuracy)) then
+  begin
+    write('00');
+    exit
+  end
   else
-    after_dot_num:=after_dot_num_func(base, 0, accuracy, after_dot_res);
-    for i:=1 to after_dot_num do
-      begin
-        after_dot_res:=(after_dot_res*base);
-        to_16_system((trunc(after_dot_res)), false);
-        write(' ');
-        after_dot_res:=(after_dot_res-(trunc(after_dot_res)));
-      end;
+    after_dot_num := after_dot_num_func(base, 0, accuracy, after_dot_res);
+  for i:=1 to after_dot_num do
+  begin
+    after_dot_res := (after_dot_res * base);
+    to_16_system((trunc(after_dot_res)), false);
+    write(' ');
+    after_dot_res := (after_dot_res - (trunc(after_dot_res)));
+  end;
 end;
 
 
@@ -208,7 +209,6 @@ begin
     if res > arg then
     begin
       res := subSubtraction(res, arg);
-      writeln('LOG: first - sec. sucsess.');
       (*  if result < 0 *)
       if res_sign < arg_sign then
         res_sign := false;
@@ -217,7 +217,6 @@ begin
     else
     begin
       res := subSubtraction(arg, res);
-      writeln('LOG: arg - res. sucsess.');
       if res_sign > arg_sign then
         res_sign := false;
     end;
@@ -301,7 +300,7 @@ var
   base, i, fin_fl, num: integer;
   fl_operation, fl_znak, fl_base, fl_dot, fl_comment: boolean;
   c, d: char;
-  operation_str: string;
+  operation_str, fin_str: string;
 begin
   operation_str := '+-*/';
   fl_operation := false;
@@ -341,43 +340,25 @@ begin
       end
       else
       begin
+        (*  try to catch finish command *)
         if ord(c) = ord('f') then
         begin
-          fin_fl := 1;
-          continue;
-        end
-        else
-          if ((ord(c) = ord('i')) and (fin_fl = 1)) then
+          (* read the word *)
+          fin_str := 'f';
+          for i:=1 to 5 do
           begin
-            fin_fl := 2;
+            read(c);
+            fin_str := fin_str + c;
+          end;
+          (*  check if finish *)
+          if fin_str = 'finish' then
+          begin
+            fin := true;
             continue;
           end
           else
-            if ((ord(c) = ord('n')) and (fin_fl = 2)) then
-            begin
-              fin_fl := 3;
-              continue;
-            end
-            else
-              if ((ord(c) = ord('i')) and (fin_fl = 3)) then
-              begin
-                fin_fl := 4;
-                continue;
-              end
-              else
-                if ((ord(c) = ord('s')) and (fin_fl = 4)) then
-                begin
-                  fin_fl := 5;
-                  continue;
-                end
-                else
-                  if ((ord(c) = ord('h')) and (fin_fl = 5)) then
-                  begin
-                    fin := true;
-                    continue;
-                  end
-                  else
-                    finByMistake(result, accuracy, out_base);
+            finByMistake(result, accuracy, out_base);
+        end;
       end;
     end;
 
@@ -460,7 +441,7 @@ begin
             if ((ord(d) >= ord('0')) and (ord(d) <= ord('9'))) then
               num := num + (ord(d) - ord('0'))
             else
-              num := num + (10 +ord(d) - ord('a'));
+              num := num + (10 + ord(d) - ord('a'));
           end
           else
             finByMistake(result, accuracy, out_base);
@@ -565,7 +546,7 @@ end;
 procedure mainFinish(res_sign: boolean; result: double; accuracy: double; var out_base: start_args);
 var
   after_dot_res: double;
-  before_dot_res: longint; 
+  before_dot_res: longint;
   i: integer;
 
 begin
@@ -576,36 +557,13 @@ begin
   {output with formatting}
   for i:=2 to ParamCount do
   begin
-    if (out_base[i] <= 9) then
-    begin
-      write(out_base[i], '     ');
-      if (res_sign = false) then
-        write('-');
-      to_system(out_base[i], before_dot_res);
-      write(' . ');
-      after_dot_to_system(out_base[i], accuracy, after_dot_res);
-      writeln;
-    end;
-    if ((out_base[i] >= 10) and (out_base[i] <= 99)) then
-    begin
-      write(out_base[i], '    ');
-      if (res_sign = false) then
-        write('-');
-      to_system(out_base[i], before_dot_res);
-      write(' . ');
-      after_dot_to_system(out_base[i], accuracy, after_dot_res);
-      writeln;
-    end;
-    if (out_base[i] > 99) then
-    begin
-      write(out_base[i], '   ');
-      if (res_sign = false) then
-        write('-');
-      to_system(out_base[i], before_dot_res);
-      write(' . ');
-      after_dot_to_system(out_base[i], accuracy, after_dot_res);
-      writeln;
-    end;
+    write(out_base[i]: 3, ':  ');
+    if (res_sign = false) then
+      write('-');
+    to_system(out_base[i], before_dot_res);
+    write('. ');
+    after_dot_to_system(out_base[i], accuracy, after_dot_res);
+    writeln;
   end;
 
 end;
@@ -616,9 +574,9 @@ begin
   mainReadInit(accuracy, out_base);
 
   (*  write initialize results *)
-  writeln('the accuracy is: ', accuracy: 0: 5);
+{  writeln('the accuracy is: ', accuracy: 0: 5);
   for i:=2 to length(out_base) do
-    writeln(i - 1, ' answ base: ', out_base[i]);
+    writeln(i - 1, ' answ base: ', out_base[i]);}
 
   (*  main cycle *)
   while true do
