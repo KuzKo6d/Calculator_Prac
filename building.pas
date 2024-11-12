@@ -130,7 +130,7 @@ end;
 
 {conversion of trunc(res) into a number system with a base of 2..256}    {Для Кости и Гриши, стереть это!!!!!!!!  Эта функция берет целую часть от результата и сначала переводит в кастомную систему
  счисления, а потом уже эти числа выводит в представлении [0..9][a..f]}
-procedure to_system(base, res: integer);
+procedure to_system(base: integer; res: longint);
 var
   new_res: longint;
 
@@ -149,7 +149,7 @@ begin
   end;
 end;
 
-{this function determines how many decimal places to display}			{Для Кости и Гриши, стереть это!!!!!!!!! Тут гениальная схема Сальникова по тому сколько знаков нужно}
+{this function determines how many decimal places to display}      {Для Кости и Гриши, стереть это!!!!!!!!! Тут гениальная схема Сальникова по тому сколько знаков нужно}
 function after_dot_num_func(base, count: integer; accuracy, after_dot_res: double): integer;
 var
   temp_accuracy, temp_num, new_num, new_acc: double;
@@ -550,6 +550,7 @@ var
   i: integer;
 
 begin
+  writeln('result value is: ', result:0:5);
 
   after_dot_res := (result - (trunc(result)));
   before_dot_res := trunc(result);
