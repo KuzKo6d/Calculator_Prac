@@ -129,9 +129,9 @@ end;
 
 {conversion of trunc(res) into a number system with a base of 2..256} 		{Для Кости и Гриши, стереть это!!!!!!!!  Эта функция берет целую часть от результата и сначала переводит в кастомную систему
  счисления, а потом уже эти числа выводит в представлении [0..9][a..f]}
-procedure to_system(base, res: integer);
+procedure to_system(base: integer; res: longint);
 var
-  new_res: integer;
+  new_res: longint;
 
 begin
   if ((res div base) = 0) then
@@ -565,7 +565,8 @@ end;
 procedure mainFinish(res_sign: boolean; result: double; accuracy: double; var out_base: start_args);
 var
   after_dot_res: double;
-  before_dot_res, i: integer;
+  before_dot_res: longint; 
+  i: integer;
 
 begin
 
@@ -603,6 +604,7 @@ begin
       to_system(out_base[i], before_dot_res);
       write(' . ');
       after_dot_to_system(out_base[i], accuracy, after_dot_res);
+      writeln;
     end;
   end;
 
