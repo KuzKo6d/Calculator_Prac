@@ -262,20 +262,17 @@ end;
 {reads the input data, splits it into the required parts and handles all exceptional situations}
 procedure mainReadInput(var arg_operation :char; var arg_sign :boolean; var argument :double; var fin :boolean);
 type
-    phases = (p_operation, p_base, p_sign, p_first_num, p_dot, p_last_num);
+    (*  phase, where we searching for name of it *)
+
+    phases = (p_operation, p_base, p_sign, p_first_num, p_last_num);
 var
     base, i :int64;
-    fl_operation, fl_znak, fl_base, fl_dot, fl_comment :boolean;
     phase :phases;
     c, d :char;
     fin_str :string;
     arg_local :double;
 begin
-    fl_operation := false;
-    fl_dot := true;
-    fl_znak := true;
-    fl_base := true;
-    fl_comment := false;
+    phase := p_operation;
     argument := 0;
     arg_sign := true;
     fin := false;
@@ -292,18 +289,17 @@ begin
             continue;
         end;
 
-        (*  skip all spaces and tabs*)
+            (*  skip all spaces and tabs*)
         if (ord(c) = ord(' ')) or (ord(c) = 9) then
             continue;
 
             (*  read start of string *)
-        if not(fl_operation) then
+        if phase = p_operation then
         begin
             (*  check if is operation *)
             if (c = '+') or (c = '-') or (c = '*') or (c = '/') then
             begin
-                fl_operation := true;
-                fl_base := false;
+                phase := p_base;
                 arg_operation := c;
                 continue;
             end
@@ -331,8 +327,8 @@ begin
             end;
         end;
 
-            {entering the number system}
-        if not(fl_base) then
+            (*  handle the base *)
+        if phase = p_base then
         begin
             if ((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) then
             begin
@@ -350,8 +346,7 @@ begin
                 finByMistake('Input base is out of range. (2..256 allowed)');
             if (ord(c) = ord(':')) and (base <> 0) then
             begin
-                fl_base := true;
-                fl_znak := false;
+                phase := p_sign;
                 read(d);
                 if (ord(d) <> ord(' ')) then
                     finByMistake('" " expected after ":".');
@@ -362,30 +357,27 @@ begin
         end;
 
 
-            {entering a number sign}
-        if not(fl_znak) then
+            (*  handle the sign of num *)
+        if phase = p_sign then
         begin
             case c of
                 '+' :
                 begin
                     arg_sign := true;
-                    fl_znak := true;
-                    fl_dot := false;
+                    phase := p_first_num;
                     continue;
                 end;
                 '-' :
                 begin
                     arg_sign := false;
-                    fl_znak := true;
-                    fl_dot := false;
+                    phase := p_first_num;
                     continue;
                 end
             else
                 if checkingFor16(c) then
                 begin
                     arg_sign := true;
-                    fl_znak := true;
-                    fl_dot := false;
+                    phase := p_first_num;
                 end
                 else
                     finByMistake('Input num is incorrect.');
@@ -395,7 +387,7 @@ begin
             {entering an integer part of a number}
         i := 0;
 
-        if not(fl_dot) then
+        if phase = p_first_num then
         begin
             if (checkingFor16(c)) then
             begin
@@ -439,9 +431,10 @@ begin
                         break;
                 end;
             end;
+            (*  dot detecting *)
             if ((ord(c) = ord('.')) and (i <> 0)) then
             begin
-                fl_dot := true;
+                phase := p_last_num;
                 i := 0;
                 continue;
             end
@@ -449,8 +442,8 @@ begin
                 finByMistake('"." expected after first part of number.');
         end;
 
-            {entering the fractional part of a number}
-        if fl_dot and fl_operation and fl_znak and fl_base then
+            (*  read the fractional part of num *)
+        if phase = p_last_num then
         begin
             if (checkingFor16(c)) then
             begin
@@ -481,13 +474,15 @@ begin
                     arg_local := 0;
                     i := i + 1;
                     read(c);
-                    if (ord(c) = ord(' ')) then
-                        while (ord(c) = ord(' ')) do
-                            read(c);
-                    if (ord(c) = ord('#')) then
+                    (*  skip spaces *)
+                    while c = ' ' do
+                        read(c);
+                    (*  skip comment *)
+                    if c = '#' then
                     begin
-                        fl_comment := true;
-                        break;
+                        while c <> #10 do
+                            read(c);
+                        continue;
                     end;
                     if (checkingFor16(c)) then
                         continue
@@ -495,11 +490,10 @@ begin
                         break;
                 end;
             end;
-            if (fl_comment = true) then
-                continue;
             if ((ord(c) = 10) and (i <> 0)) then
             begin
                 i := 0;
+                phase := p_operation;
                 continue;
             end
             else
