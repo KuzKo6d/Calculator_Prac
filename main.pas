@@ -18,8 +18,9 @@ var
 
 procedure mainFinish(); forward;
 
+(*  SUB FUNCTONS *)
 {called in case of an error, outputs the last result received}
-procedure finByMistake(exit_message: string);
+procedure finByMistake(exit_message :string);
 begin
     writeln('Exit message: ', exit_message);
     writeln('The last result received:');
@@ -287,13 +288,13 @@ begin
 end;
 
 {reads the input data, splits it into the required parts and handles all exceptional situations}
-procedure mainReadInput(var operation :char; var znak :boolean; var chislo :double; var fin :boolean);
+procedure mainReadInput(var arg_operation :char; var arg_sign :boolean; var argument :double; var fin :boolean);
 var
-    base, i, fin_fl :int64;
+    base, i :int64;
     fl_operation, fl_znak, fl_base, fl_dot, fl_comment :boolean;
     c, d :char;
-    operation_str :string;
-    argument :double;
+    operation_str, fin_str :string;
+    arg_local :double;
 begin
     operation_str := '+-*/';
     fl_operation := false;
@@ -301,13 +302,12 @@ begin
     fl_znak := true;
     fl_base := true;
     fl_comment := false;
-    chislo := 0;
-    znak := true;
-    fin_fl := 0;
+    argument := 0;
+    arg_sign := true;
     fin := false;
     base := 0;
     repeat
-        argument := 0;
+        arg_local := 0;
         read(c);
 
             {checking the line for comments}
@@ -321,55 +321,38 @@ begin
         if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment)) then
             continue;
 
-            {entering the operation sign or checking the first significant character of the string at the beginning of the word finish}
+        (*  read start of string *)
         if not(fl_operation) then
         begin
+            (*  check if operation *)
             if (pos(c, operation_str) <> 0) then
             begin
                 fl_operation := true;
                 fl_base := false;
-                operation := c;
+                arg_operation := c;
                 continue;
             end
             else
             begin
+                (*  try to catch finish command *)
                 if ord(c) = ord('f') then
                 begin
-                    fin_fl := 1;
-                    continue;
-                end
-                else
-                    if ((ord(c) = ord('i')) and (fin_fl = 1)) then
+                    (* read the word *)
+                    fin_str := 'f';
+                    for i:=1 to 5 do
                     begin
-                        fin_fl := 2;
+                        read(c);
+                        fin_str := fin_str + c;
+                    end;
+                    (*  check if finish *)
+                    if fin_str = 'finish' then
+                    begin
+                        fin := true;
                         continue;
                     end
                     else
-                        if ((ord(c) = ord('n')) and (fin_fl = 2)) then
-                        begin
-                            fin_fl := 3;
-                            continue;
-                        end
-                        else
-                            if ((ord(c) = ord('i')) and (fin_fl = 3)) then
-                            begin
-                                fin_fl := 4;
-                                continue;
-                            end
-                            else
-                                if ((ord(c) = ord('s')) and (fin_fl = 4)) then
-                                begin
-                                    fin_fl := 5;
-                                    continue;
-                                end
-                                else
-                                    if ((ord(c) = ord('h')) and (fin_fl = 5)) then
-                                    begin
-                                        fin := true;
-                                        continue;
-                                    end
-                                    else
-                                        finByMistake('An input error, an incorrect character was encountered');
+                        finByMistake('Incorrect input. Can"t start with letter.');
+                end;
             end;
         end;
 
@@ -410,14 +393,14 @@ begin
             case c of
                 '+' :
                 begin
-                    znak := true;
+                    arg_sign := true;
                     fl_znak := true;
                     fl_dot := false;
                     continue;
                 end;
                 '-' :
                 begin
-                    znak := false;
+                    arg_sign := false;
                     fl_znak := true;
                     fl_dot := false;
                     continue;
@@ -425,7 +408,7 @@ begin
             else
                 if checkingFor16(c) then
                 begin
-                    znak := true;
+                    arg_sign := true;
                     fl_znak := true;
                     fl_dot := false;
                 end
@@ -448,27 +431,27 @@ begin
                     if (checkingFor16(c) and checkingFor16(d)) then
                     begin
                         if ((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) then
-                            argument := argument + 16 * (ord(c) - ord('0'))
+                            arg_local := arg_local + 16 * (ord(c) - ord('0'))
                         else
-                            argument := argument + 16 * (10 + ord(c) - ord('a'));
+                            arg_local := arg_local + 16 * (10 + ord(c) - ord('a'));
                         if ((ord(d) >= ord('0')) and (ord(d) <= ord('9'))) then
-                            argument := argument + (ord(d) - ord('0'))
+                            arg_local := arg_local + (ord(d) - ord('0'))
                         else
-                            argument := argument + (10 + ord(d) - ord('a'));
+                            arg_local := arg_local + (10 + ord(d) - ord('a'));
                     end
                     else
                         finByMistake('Input error, incorrect input of an integer part of a number');
 
-                    if (argument >= base) then
+                    if (arg_local >= base) then
 
                         finByMistake('Input error, overflow of the digit in the integer part of the number')
                     else
                     begin
-                        if (chislo * base >= maxDouble - argument) or (chislo >= maxDouble / base) then
+                        if (argument * base >= maxDouble - arg_local) or (argument >= maxDouble / base) then
                             finByMistake('Input Error, overflow when entering, too large number is entered');
-                        chislo := chislo * base + argument;
+                        argument := argument * base + arg_local;
                     end;
-                    argument := 0;
+                    arg_local := 0;
                     read(c);
                     if (ord(c) = ord(' ')) then
                     begin
@@ -503,24 +486,24 @@ begin
                     if (checkingFor16(c) and checkingFor16(d)) then
                     begin
                         if ((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) then
-                            argument := argument + 16 * (ord(c) - ord('0'))
+                            arg_local := arg_local + 16 * (ord(c) - ord('0'))
                         else
-                            argument := argument + 16 * (10 + ord(c) - ord('a'));
+                            arg_local := arg_local + 16 * (10 + ord(c) - ord('a'));
                         if ((ord(d) >= ord('0')) and (ord(d) <= ord('9'))) then
-                            argument := argument + (ord(d) - ord('0'))
+                            arg_local := arg_local + (ord(d) - ord('0'))
                         else
-                            argument := argument + 10 + (ord(d) - ord('a'));
+                            arg_local := arg_local + 10 + (ord(d) - ord('a'));
                     end
                     else
                         finByMistake('Input error, incorrect input of the fractional part of a number');
 
-                    if (argument >= base) then
+                    if (arg_local >= base) then
                         finByMistake('Input error, overflow of the digit in the fractional part of the number')
                     else
                     begin
-                        chislo := chislo + argument / exp(i * LN(base));
+                        argument := argument + arg_local / exp(i * LN(base));
                     end;
-                    argument := 0;
+                    arg_local := 0;
                     i := i + 1;
                     read(c);
                     if (ord(c) = ord(' ')) then
@@ -558,14 +541,14 @@ var
 begin
     fractionalPartRes := result - (int(result));
     integerPartRes := int(result);
-    {output with formatting}
+    (*  write output wit formatting *)
     for i:=2 to ParamCount do
     begin
-        write(out_base[i], '     ');
+        write(out_base[i]: 3, ':  ');
         if (res_sign = false) then
             write('-');
         transferToCustom(integerPartRes, out_base[i]);
-        write(' . ');
+        write('. ');
         transferToCustomAfterDot(out_base[i], accuracy, fractionalPartRes);
         writeln;
     end;
