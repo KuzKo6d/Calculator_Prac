@@ -550,15 +550,19 @@ end;
 
 {determining the number of decimal places depending on the entered precision}
 procedure checkingTheAccuracy(base:int64;var count:int64; epsilon, fractionalPartRes:double);
-var temp_res, temp_epsilon:double;
+var temp_res, temp_epsilon, changed_num, shifted_num:double;
 begin
+	shifted_num:=0;
+	changed_num:=int(base * fractionalPartRes);
 	temp_res:=(base - 1) + base * fractionalPartRes - int(base * fractionalPartRes);
 	temp_epsilon:=epsilon * base;
 	count:=1;
-	while temp_res > temp_epsilon do
+	while (temp_res > temp_epsilon) do
 	begin
 		count:=count + 1;
-		temp_res:=(base - 1) + base * temp_res - int(base * temp_res);
+		shifted_num:=shifted_num + base*changed_num;
+		changed_num:=int(base * (temp_res - base +1)) - shifted_num*base;
+		temp_res:=(base - 1) + base * temp_res - int(base * temp_res) + shifted_num;
 		temp_epsilon:=temp_epsilon * base;
 	end;	
 end;
@@ -568,7 +572,7 @@ procedure transferToCustomAfterDot(base: integer; epsilon, fractionalPartRes: do
 var count, i: int64;
 begin
 	count:=0;
-	if (fractionalPartRes = 0)  then
+	if (fractionalPartRes = 0) or (fractionalPartRes > epsilon)  then
 	begin
 		write('00');
 		exit;
