@@ -220,7 +220,7 @@ begin
 		end;
 
 		{the condition for skipping all spaces and tabs, or if its comment}
-		if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment)) then
+		if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment) or (ord(c)=10) then
 			continue;
 
 		{entering the operation sign or checking the first significant character of the string at the beginning of the word finish}
@@ -484,7 +484,7 @@ begin
 				finByMistake(res, epsilon, arrayOfAnsBases);
 			end;
 		end;
-	until (ord(c) = 10) or (fin = true);
+	until ((ord(c) = 10) and fl_dot and fl_operation and fl_znak and fl_base)  or (fin = true);
 end;
 
 {converting a number to a hexadecimal number system}
