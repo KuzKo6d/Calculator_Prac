@@ -16,14 +16,15 @@ var
     accuracy :double;
     out_base :start_args;
 
-procedure mainFinish(res_sign :boolean; result :double; accuracy :double; var out_base :start_args); forward;
+procedure mainFinish(); forward;
 
 {called in case of an error, outputs the last result received}
-procedure finByMistake(result :double; accuracy :double; var arr :start_args);
+procedure finByMistake(exit_message: string);
 begin
+    writeln('Exit message: ', exit_message);
     writeln('The last result received:');
-    mainFinish(res_sign, result, accuracy, arr);
-    halt(0);
+    mainFinish();
+    halt(1);
 end;
 
 {auxiliary addition that checks for overflow}
@@ -32,10 +33,7 @@ begin
     if (result <= maxDouble - arg) then  {overflow check}
         subAdding := result + arg
     else
-    begin
-        writeln('Overflow of the result, when adding the value went beyond the double type');
-        finByMistake(result, accuracy, out_base);
-    end;
+        finByMistake('Overflow of the result, when adding the value went beyond the double type');
 end;
 
 {auxiliary multiplication checking for overflow}
@@ -50,28 +48,19 @@ begin
         if (result >= minDouble / arg) and (result <= maxDouble / arg) then {overflow check}
             subMultiplicate := result * arg
         else
-        begin
-            writeln('Overflow of the result, when multiplying the value went beyond the double type');
-            finByMistake(result, accuracy, out_base);
-        end;
+            finByMistake('Overflow of the result, when multiplying the value went beyond the double type');
 end;
 
 {auxiliary division that checks overflow and the case of division by zero}
 function subDivision(result, arg :double) :double;
 begin
     if arg = 0 then {checking division by zero}
-    begin
-        writeln('Incorrect result, division by zero is prohibited!');
-        finByMistake(result, accuracy, out_base);
-    end
+        finByMistake('Incorrect result, division by zero is prohibited!')
     else
         if (result >= minDouble * arg) and (result <= maxDouble * arg) then {overflow check}
             subDivision := result / arg
         else
-        begin
-            writeln('Overflow of the result, when dividing, the value went beyond the boundaries of the double type');
-            finByMistake(result, accuracy, out_base);
-        end;
+            finByMistake('Overflow of the result, when dividing, the value went beyond the boundaries of the double type');
 end;
 
 {the main addition, which performs addition or subtraction depending on the characters of the entered number and the result}
@@ -380,10 +369,7 @@ begin
                                         continue;
                                     end
                                     else
-                                    begin
-                                        writeln('An input error, an incorrect character was encountered');
-                                        finByMistake(result, accuracy, out_base);
-                                    end;
+                                        finByMistake('An input error, an incorrect character was encountered');
             end;
         end;
 
@@ -403,27 +389,18 @@ begin
                 end;
             end;
             if ((base > 256) or (base < 2)) then
-            begin
-                writeln('Input error, the number system must represent an integer from 2 to 256');
-                finByMistake(result, accuracy, out_base);
-            end;
+                finByMistake('Input error, the number system must represent an integer from 2 to 256');
             if (ord(c) = ord(':')) and (base <> 0) then
             begin
                 fl_base := true;
                 fl_znak := false;
                 read(d);
                 if (ord(d) <> ord(' ')) then
-                begin
-                    writeln('Input error, a space is required after the colon');
-                    finByMistake(result, accuracy, out_base);
-                end;
+                    finByMistake('Input error, a space is required after the colon');
                 continue;
             end
             else
-            begin
-                writeln('Input error, the number system must represent an integer from 2 to 256');
-                finByMistake(result, accuracy, out_base);
-            end;
+                finByMistake('Input error, the number system must represent an integer from 2 to 256');
         end;
 
 
@@ -453,10 +430,7 @@ begin
                     fl_dot := false;
                 end
                 else
-                begin
-                    writeln('Input error, the number sign is entered incorrectly');
-                    finByMistake(result, accuracy, out_base);
-                end;
+                    finByMistake('Input error, the number sign is entered incorrectly');
             end;
         end;
 
@@ -483,23 +457,15 @@ begin
                             argument := argument + (10 + ord(d) - ord('a'));
                     end
                     else
-                    begin
-                        writeln('Input error, incorrect input of an integer part of a number');
-                        finByMistake(result, accuracy, out_base);
-                    end;
+                        finByMistake('Input error, incorrect input of an integer part of a number');
 
                     if (argument >= base) then
-                    begin
-                        writeln('Input error, overflow of the digit in the integer part of the number');
-                        finByMistake(result, accuracy, out_base);
-                    end
+
+                        finByMistake('Input error, overflow of the digit in the integer part of the number')
                     else
                     begin
                         if (chislo * base >= maxDouble - argument) or (chislo >= maxDouble / base) then
-                        begin
-                            writeln('Input Error, overflow when entering, too large number is entered');
-                            finByMistake(result, accuracy, out_base);
-                        end;
+                            finByMistake('Input Error, overflow when entering, too large number is entered');
                         chislo := chislo * base + argument;
                     end;
                     argument := 0;
@@ -522,10 +488,7 @@ begin
                 continue;
             end
             else
-            begin
-                writeln('Input error, there must be a dot after the integer part of the number');
-                finByMistake(result, accuracy, out_base);
-            end;
+                finByMistake('Input error, there must be a dot after the integer part of the number');
         end;
 
             {entering the fractional part of a number}
@@ -549,16 +512,10 @@ begin
                             argument := argument + 10 + (ord(d) - ord('a'));
                     end
                     else
-                    begin
-                        writeln('Input error, incorrect input of the fractional part of a number');
-                        finByMistake(result, accuracy, out_base);
-                    end;
+                        finByMistake('Input error, incorrect input of the fractional part of a number');
 
                     if (argument >= base) then
-                    begin
-                        writeln('Input error, overflow of the digit in the fractional part of the number');
-                        finByMistake(result, accuracy, out_base);
-                    end
+                        finByMistake('Input error, overflow of the digit in the fractional part of the number')
                     else
                     begin
                         chislo := chislo + argument / exp(i * LN(base));
@@ -588,16 +545,13 @@ begin
                 continue;
             end
             else
-            begin
-                writeln('Input error, the fractional part of the number is not entered');
-                finByMistake(result, accuracy, out_base);
-            end;
+                finByMistake('Input error, the fractional part of the number is not entered');
         end;
     until (ord(c) = 10) or (fin = true);
 end;
 
 {ends the program if it encounters the word finish or an error}
-procedure mainFinish(res_sign :boolean; result :double; accuracy :double; var out_base :start_args);
+procedure mainFinish();
 var
     integerPartRes, fractionalPartRes :double;
     i :int64;
@@ -627,7 +581,7 @@ begin
         {The word finish has been found}
         if fin then
         begin
-            mainFinish(res_sign, result, accuracy, out_base);
+            mainFinish();
             writeln;
             halt(0);
         end
