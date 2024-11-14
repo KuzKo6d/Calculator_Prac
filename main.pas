@@ -34,12 +34,13 @@ begin
     if (result <= maxDouble - arg) then
         subAdding := result + arg
     else
-        finByMistake('Overflow of the result, when adding the value went beyond the double type');
+        finByMistake('Result overflow by adding.');
 end;
 
 (*  check overflow and compute multiplication *)
 function subMultiplicate(result, arg :double) :double;
 begin
+    (*  if argument is zero *)
     if (arg = 0) then
     begin
         result := 0;
@@ -49,19 +50,20 @@ begin
         if (result >= minDouble / arg) and (result <= maxDouble / arg) then
             subMultiplicate := result * arg
         else
-            finByMistake('Overflow of the result, when multiplying the value went beyond the double type');
+            finByMistake('Result overflow by multiplication.');
 end;
 
 (*  check overflow and compute subdivision *)
 function subDivision(result, arg :double) :double;
 begin
+    (*  cancel division by zero *)
     if arg = 0 then
-        finByMistake('Incorrect result, division by zero is prohibited!')
+        finByMistake('Can"t divide by zero.')
     else
         if (result >= minDouble * arg) and (result <= maxDouble * arg) then
             subDivision := result / arg
         else
-            finByMistake('Overflow of the result, when dividing, the value went beyond the boundaries of the double type');
+            finByMistake('Result overflow by division.');
 end;
 
 (*  check if char in 16th base alphabet *)
@@ -241,28 +243,16 @@ begin
 
     (*  check count of args (min 2, max N) *)
     if (ParamCount < 2) then
-    begin
-        writeln('Incorrect count of arguments.');
-        writeln('(min: 2)');
-        halt(1);
-    end;
+        finByMistake('Incorrect count of start arguments. (min: 2)');
 
     (*  check if accuracy value out of condition and try to StrToFloat *)
     if not(TryStrToFLoat(ParamStr(1), accuracy)) or (accuracy <= 0) or (accuracy > 1) then
-    begin
-        writeln('Unexpected accuracy value.');
-        writeln('(min: 0, max: 1)');
-        halt(1);
-    end;
+    finByMistake('Unexpected accuracy value. (min: 0, max: 1)');
 
     (*  check if base value out of condition and try to StrToInt *)
     for i:=2 to ParamCount do
         if not TryStrToInt(ParamStr(i), tempInt) or (tempInt < 2) or (tempInt > 256) then
-        begin
-            writeln('Unexpected base value.');
-            writeln('(min: 2, max: 256)');
-            halt(1);
-        end
+        finByMistake('Unexpected base Value. (min: 2, max: 256)')
                 (*  write base value to array if it's okay *)
         else
             out_base[i] := tempInt;
@@ -352,18 +342,18 @@ begin
                 end;
             end;
             if ((base > 256) or (base < 2)) then
-                finByMistake('Input error, the number system must represent an integer from 2 to 256');
+                finByMistake('Input base is out of range. (2..256 allowed)');
             if (ord(c) = ord(':')) and (base <> 0) then
             begin
                 fl_base := true;
                 fl_znak := false;
                 read(d);
                 if (ord(d) <> ord(' ')) then
-                    finByMistake('Input error, a space is required after the colon');
+                    finByMistake('" " expected after ":".');
                 continue;
             end
             else
-                finByMistake('Input error, the number system must represent an integer from 2 to 256');
+                finByMistake('Input base is out of range. (":" expected)');
         end;
 
 
@@ -393,7 +383,7 @@ begin
                     fl_dot := false;
                 end
                 else
-                    finByMistake('Input error, the number sign is entered incorrectly');
+                    finByMistake('Input num is incorrect.');
             end;
         end;
 
@@ -420,15 +410,15 @@ begin
                             arg_local := arg_local + (10 + ord(d) - ord('a'));
                     end
                     else
-                        finByMistake('Input error, incorrect input of an integer part of a number');
+                        finByMistake('Incorrect num before dot.');
 
                     if (arg_local >= base) then
 
-                        finByMistake('Input error, overflow of the digit in the integer part of the number')
+                        finByMistake('Dight is biger, then base - 1.')
                     else
                     begin
                         if (argument * base >= maxDouble - arg_local) or (argument >= maxDouble / base) then
-                            finByMistake('Input Error, overflow when entering, too large number is entered');
+                            finByMistake('Too big bumber.');
                         argument := argument * base + arg_local;
                     end;
                     arg_local := 0;
@@ -451,7 +441,7 @@ begin
                 continue;
             end
             else
-                finByMistake('Input error, there must be a dot after the integer part of the number');
+                finByMistake('"." expected after first part of number.');
         end;
 
             {entering the fractional part of a number}
@@ -475,10 +465,10 @@ begin
                             arg_local := arg_local + 10 + (ord(d) - ord('a'));
                     end
                     else
-                        finByMistake('Input error, incorrect input of the fractional part of a number');
+                        finByMistake('Fractional part of num is incorrect.');
 
                     if (arg_local >= base) then
-                        finByMistake('Input error, overflow of the digit in the fractional part of the number')
+                        finByMistake('Dight is bigger, then base - 1.')
                     else
                     begin
                         argument := argument + arg_local / exp(i * LN(base));
@@ -508,7 +498,7 @@ begin
                 continue;
             end
             else
-                finByMistake('Input error, the fractional part of the number is not entered');
+                finByMistake('Fractional part of num can"t be empty.');
         end;
     until (ord(c) = 10) or (fin = true);
 end;
