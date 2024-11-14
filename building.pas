@@ -162,6 +162,11 @@ begin
 	end
 	else
 		accurasy:=strtofloat(ParamStr(1));
+  	if ((accurasy > 1) and (accurasy <= 0)) then
+    	begin
+     		writeln('Incorrect value of first parameter. The first parametes must be bigger than 0 and lower than 1');
+       		halt(1);
+     	end;
 	for i:=2 to kol do
 	begin
 		if not(is_int(ParamStr(i))) then
