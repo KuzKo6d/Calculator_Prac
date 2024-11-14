@@ -19,7 +19,7 @@ var
 procedure mainFinish(); forward;
 
 (*  SUB FUNCTONS *)
-{called in case of an error, outputs the last result received}
+(*  write last result and exit the program with error *)
 procedure finByMistake(exit_message :string);
 begin
     writeln('Exit message: ', exit_message);
@@ -28,128 +28,54 @@ begin
     halt(1);
 end;
 
-{auxiliary addition that checks for overflow}
+(*  check overflow and compute adding *)
 function subAdding(result, arg :double) :double;
 begin
-    if (result <= maxDouble - arg) then  {overflow check}
+    if (result <= maxDouble - arg) then
         subAdding := result + arg
     else
-        finByMistake('Overflow of the result, when adding the value went beyond the double type');
+        finByMistake('Result overflow by adding.');
 end;
 
-{auxiliary multiplication checking for overflow}
+(*  check overflow and compute multiplication *)
 function subMultiplicate(result, arg :double) :double;
 begin
+    (*  if argument is zero *)
     if (arg = 0) then
     begin
         result := 0;
         res_sign := true;
     end
     else
-        if (result >= minDouble / arg) and (result <= maxDouble / arg) then {overflow check}
+        if (result >= minDouble / arg) and (result <= maxDouble / arg) then
             subMultiplicate := result * arg
         else
-            finByMistake('Overflow of the result, when multiplying the value went beyond the double type');
+            finByMistake('Result overflow by multiplication.');
 end;
 
-{auxiliary division that checks overflow and the case of division by zero}
+(*  check overflow and compute subdivision *)
 function subDivision(result, arg :double) :double;
 begin
-    if arg = 0 then {checking division by zero}
-        finByMistake('Incorrect result, division by zero is prohibited!')
+    (*  cancel division by zero *)
+    if arg = 0 then
+        finByMistake('Can"t divide by zero.')
     else
-        if (result >= minDouble * arg) and (result <= maxDouble * arg) then {overflow check}
+        if (result >= minDouble * arg) and (result <= maxDouble * arg) then
             subDivision := result / arg
         else
-            finByMistake('Overflow of the result, when dividing, the value went beyond the boundaries of the double type');
+            finByMistake('Result overflow by division.');
 end;
 
-{the main addition, which performs addition or subtraction depending on the characters of the entered number and the result}
-procedure mainAdding(var result :double; argument :double; var res_sign :boolean; arg_sign :boolean);
-begin
-    if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
-        result := subAdding(result, argument)
-    else
-    begin
-        if result > argument then
-        begin
-            result := result - argument;
-            if res_sign < arg_sign then
-                res_sign := false;
-        end
-        else
-        begin
-            result := result - argument;
-            if res_sign > arg_sign then
-                res_sign := false;
-        end;
-    end;
-end;
-
-{the main multiplication, which produces addition or subtraction depending on the characters of the entered number and the result}
-procedure mainMultiplicate(var result :double; argument :double; var res_sign :boolean; arg_sign :boolean);
-begin
-    if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
-        res_sign := true
-    else
-        res_sign := false;
-    result := subMultiplicate(result, argument);
-end;
-
-{the main division, which performs addition or subtraction depending on the characters of the entered number and the result}
-procedure mainDivision(var result :double; argument :double; var res_sign :boolean; arg_sign :boolean);
-begin
-    if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
-        res_sign := true
-    else
-        res_sign := false;
-    result := subDivision(result, argument);
-end;
-
-{checks whether the stock is an integer}
-function is_int(s :string) :boolean;
-var
-    i :integer;
-begin
-    is_int := true;
-    if length(s) = 0 then
-        is_int := false;
-    for i:=1 to length(s) do
-        if not((ord('0') <= ord(s[i])) and (ord('9') >= ord(s[i]))) then
-        begin
-            is_int := false;
-            break;
-        end;
-end;
-
-{checks whether the stock is a real number}
-function is_double(s :string) :boolean;
-var
-    s1, s2 :string;
-    p :integer;
-begin
-    is_double := true;
-    p := pos('.', s);
-    if p = 0 then
-    begin
-        is_double := false;
-        exit;
-    end;
-    s1 := copy(s, 1, pos('.', s) - 1);
-    s2 := copy(s, pos('.', s) + 1, length(s) - pos('.', s));
-    if not(is_int(s1) and is_int(s2)) then
-        is_double := false
-end;
-
-{checks whether a character is a hexadecimal number}
+(*  check if char in 16th base alphabet *)
 function checkingFor16(c :char) :boolean;
 begin
-    checkingFor16 := false;
     if (((ord(c) >= ord('0')) and (ord(c) <= ord('9'))) or ((ord(c) >= ord('a')) and (ord(c) <= ord('f')))) then
-        checkingFor16 := true;
+        checkingFor16 := true
+    else
+        checkingFor16 := false;
 end;
 
-{converting a number to a hexadecimal number system}
+(*  write num in correct base in 16 output *)
 procedure writeIn16thBase(result :int64);
 var
     first, second :char;
@@ -171,85 +97,89 @@ begin
     else
     begin
         first := '0';
-        //writeln('result mod 16: ', result mod 16);
         if (result mod 16 <= 9) then
             second := chr(ord('0') + (result mod 16))
         else
             second := chr(ord('a') + (result mod 16) - 10);
-        //writeln(ord(second));
     end;
     write(first, second, ' ');
 end;
 
-{determining the number of decimal places depending on the entered precision}
+(*  determining count of signs after dot using accuracy value *)
 procedure checkingTheAccuracy(base :int64; var count :int64; accuracy, fractionalPartRes :double);
 var
-    temp_res, temp_epsilon :double;
+    temp_res, temp_accuracy, changed_num, shifted_num :double;
 begin
+    shifted_num := 0;
+    changed_num := int(base * fractionalPartRes);
     temp_res := (base - 1) + base * fractionalPartRes - int(base * fractionalPartRes);
-    temp_epsilon := accuracy * base;
+    temp_accuracy := accuracy * base;
     count := 1;
-    while temp_res > temp_epsilon do
+    while (temp_res > temp_accuracy) do
     begin
         count := count + 1;
-        temp_res := (base - 1) + base * temp_res - int(base * temp_res);
-        temp_epsilon := temp_epsilon * base;
+        shifted_num := shifted_num + base * changed_num;
+        changed_num := int(base * (temp_res - base + 1)) - shifted_num * base;
+        temp_res := (base - 1) + base * temp_res - int(base * temp_res) + shifted_num;
+        temp_accuracy := temp_accuracy * base;
     end;
 end;
 
-{converting a number to the required number system with a base from 2 to 256 and output in the required form}
+(*  convert result before dot to needed base and use writeIn16thBase *)
 procedure writeResultBeforeDot(base :int64; res_int_part :double);
 var
-    k, i :int64;
+    len, i :int64;
     sub_res, prev_res :double;
     fin_res :start_args;
 begin
     sub_res := res_int_part;
-    k := 0;
-    (*  check if result is zero *)
+    len := 0;
+    (*  if result is zero *)
     if res_int_part = 0 then
     begin
         write('00 ');
         exit;
     end;
-    (*  counting signs before dot *)
+    (*  counting output vector length *)
     while (sub_res > 0) do
     begin
         sub_res := int(sub_res / base);
-        k := k + 1;
+        len := len + 1;
     end;
     sub_res := res_int_part;
 
-    setlength(fin_res, k);
-    (*  make answ vector *)
-    for i:=k downto 1 do
+    setlength(fin_res, len);
+    (*  make answ vector in needed base by sign *)
+    for i:=len downto 1 do
     begin
         prev_res := sub_res;
-        sub_res := int(prev_res / base); {div}
-        fin_res[i] := trunc(prev_res - sub_res * base); {mod}
+        sub_res := int(prev_res / base);
+        fin_res[i] := trunc(prev_res - sub_res * base);
     end;
-    for i:=1 to k do
+    (*  write by writeIn16thBase *)
+    for i:=1 to len do
     begin
         writeIn16thBase(fin_res[i]);
     end;
-
 end;
 
-{converting the fractional part of a number into a number system with a base from 2 to 256 and output in the required form}
+(*  convet fractional part of result to base, round by accuracy and write by writeIn16thBase *)
 procedure writeResultAfterDot(base :integer; accuracy, fractionalPartRes :double);
 var
     count, i :int64;
 begin
     count := 0;
-    if (fractionalPartRes = 0)  then //or (fractionalPartRes < accuracy))
+    (*  if fractional is zero *)
+    if (fractionalPartRes = 0)  then
     begin
         write('00');
         exit;
     end
     else
     begin
-        checkingTheAccuracy(base, count, accuracy, fractionalPartRes); {counting the number of digits in the fractional part}
+        checkingTheAccuracy(base, count, accuracy, fractionalPartRes);
     end;
+    (*  write fractional part by writeIn16thBase *)
     for i:=1 to count do
     begin
         fractionalPartRes := (fractionalPartRes * base);
@@ -257,6 +187,50 @@ begin
         write(' ');
         fractionalPartRes := (fractionalPartRes - (int(fractionalPartRes)));
     end;
+end;
+
+
+(*  MAIN FUNCTIONS *)
+(*  adding procedure *)
+procedure mainAdding(var result :double; argument :double; var res_sign :boolean; arg_sign :boolean);
+begin
+    if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
+        result := subAdding(result, argument)
+    else
+    begin
+        if result > argument then
+        begin
+            result := result - argument;
+            if res_sign < arg_sign then
+                res_sign := false;
+        end
+        else
+        begin
+            result := result - argument;
+            if res_sign > arg_sign then
+                res_sign := false;
+        end;
+    end;
+end;
+
+(*  multiplicate procedure *)
+procedure mainMultiplicate(var result :double; argument :double; var res_sign :boolean; arg_sign :boolean);
+begin
+    if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
+        res_sign := true
+    else
+        res_sign := false;
+    result := subMultiplicate(result, argument);
+end;
+
+(*  division procedure *)
+procedure mainDivision(var result :double; argument :double; var res_sign :boolean; arg_sign :boolean);
+begin
+    if (res_sign and arg_sign) or (not(res_sign) and not(arg_sign)) then
+        res_sign := true
+    else
+        res_sign := false;
+    result := subDivision(result, argument);
 end;
 
 (*  init procedure. read start arguments *)
@@ -270,28 +244,16 @@ begin
 
     (*  check count of args (min 2, max N) *)
     if (ParamCount < 2) then
-    begin
-        writeln('Incorrect count of arguments.');
-        writeln('(min: 2)');
-        halt(1);
-    end;
+        finByMistake('Incorrect count of start arguments. (min: 2)');
 
     (*  check if accuracy value out of condition and try to StrToFloat *)
     if not(TryStrToFLoat(ParamStr(1), accuracy)) or (accuracy <= 0) or (accuracy > 1) then
-    begin
-        writeln('Unexpected accuracy value.');
-        writeln('(min: 0, max: 1)');
-        halt(1);
-    end;
+        finByMistake('Unexpected accuracy value. (min: 0, max: 1)');
 
     (*  check if base value out of condition and try to StrToInt *)
     for i:=2 to ParamCount do
         if not TryStrToInt(ParamStr(i), tempInt) or (tempInt < 2) or (tempInt > 256) then
-        begin
-            writeln('Unexpected base value.');
-            writeln('(min: 2, max: 256)');
-            halt(1);
-        end
+            finByMistake('Unexpected base Value. (min: 2, max: 256)')
                 (*  write base value to array if it's okay *)
         else
             out_base[i] := tempInt;
@@ -299,9 +261,12 @@ end;
 
 {reads the input data, splits it into the required parts and handles all exceptional situations}
 procedure mainReadInput(var arg_operation :char; var arg_sign :boolean; var argument :double; var fin :boolean);
+type
+    phases = (p_operation, p_base, p_sign, p_first_num, p_dot, p_last_num);
 var
     base, i :int64;
     fl_operation, fl_znak, fl_base, fl_dot, fl_comment :boolean;
+    phase :phases;
     c, d :char;
     fin_str :string;
     arg_local :double;
@@ -319,15 +284,16 @@ begin
         arg_local := 0;
         read(c);
 
-            {checking the line for comments}
+            (*  skip comment *)
         if ord(c) = ord('#') then
         begin
-            fl_comment := true;
+            while c <> #10 do
+                read(c);
             continue;
         end;
 
-            {the condition for skipping all spaces and tabs, or if its comment}
-        if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment)) then
+        (*  skip all spaces and tabs*)
+        if (ord(c) = ord(' ')) or (ord(c) = 9) then
             continue;
 
             (*  read start of string *)
@@ -381,18 +347,18 @@ begin
                 end;
             end;
             if ((base > 256) or (base < 2)) then
-                finByMistake('Input error, the number system must represent an integer from 2 to 256');
+                finByMistake('Input base is out of range. (2..256 allowed)');
             if (ord(c) = ord(':')) and (base <> 0) then
             begin
                 fl_base := true;
                 fl_znak := false;
                 read(d);
                 if (ord(d) <> ord(' ')) then
-                    finByMistake('Input error, a space is required after the colon');
+                    finByMistake('" " expected after ":".');
                 continue;
             end
             else
-                finByMistake('Input error, the number system must represent an integer from 2 to 256');
+                finByMistake('Input base is out of range. (":" expected)');
         end;
 
 
@@ -422,7 +388,7 @@ begin
                     fl_dot := false;
                 end
                 else
-                    finByMistake('Input error, the number sign is entered incorrectly');
+                    finByMistake('Input num is incorrect.');
             end;
         end;
 
@@ -449,15 +415,15 @@ begin
                             arg_local := arg_local + (10 + ord(d) - ord('a'));
                     end
                     else
-                        finByMistake('Input error, incorrect input of an integer part of a number');
+                        finByMistake('Incorrect num before dot.');
 
                     if (arg_local >= base) then
 
-                        finByMistake('Input error, overflow of the digit in the integer part of the number')
+                        finByMistake('Dight is biger, then base - 1.')
                     else
                     begin
                         if (argument * base >= maxDouble - arg_local) or (argument >= maxDouble / base) then
-                            finByMistake('Input Error, overflow when entering, too large number is entered');
+                            finByMistake('Too big bumber.');
                         argument := argument * base + arg_local;
                     end;
                     arg_local := 0;
@@ -480,7 +446,7 @@ begin
                 continue;
             end
             else
-                finByMistake('Input error, there must be a dot after the integer part of the number');
+                finByMistake('"." expected after first part of number.');
         end;
 
             {entering the fractional part of a number}
@@ -504,10 +470,10 @@ begin
                             arg_local := arg_local + 10 + (ord(d) - ord('a'));
                     end
                     else
-                        finByMistake('Input error, incorrect input of the fractional part of a number');
+                        finByMistake('Fractional part of num is incorrect.');
 
                     if (arg_local >= base) then
-                        finByMistake('Input error, overflow of the digit in the fractional part of the number')
+                        finByMistake('Dight is bigger, then base - 1.')
                     else
                     begin
                         argument := argument + arg_local / exp(i * LN(base));
@@ -537,12 +503,12 @@ begin
                 continue;
             end
             else
-                finByMistake('Input error, the fractional part of the number is not entered');
+                finByMistake('Fractional part of num can"t be empty.');
         end;
     until (ord(c) = 10) or (fin = true);
 end;
 
-{ends the program if it encounters the word finish or an error}
+(*  write result with formatting to output *)
 procedure mainFinish();
 var
     integerPartRes, fractionalPartRes :double;
@@ -565,20 +531,20 @@ begin
 end;
 
 begin
-    {processing command line parameters}
+    (*  read initialize parameters *)
     mainReadInit(accuracy, out_base);
-    {cycle until you find an error or the word finish}
+    (*  main cycle of program *)
     while true do
     begin
         mainReadInput(arg_operation, arg_sign, argument, fin);
-        {The word finish has been found}
+        (*  if finish command found *)
         if fin then
         begin
             mainFinish();
             writeln;
             halt(0);
         end
-                {performing the operation}
+                (*  processing operations *)
         else
             case arg_operation of
                 '+' :mainAdding(result, argument, res_sign, arg_sign);
@@ -586,7 +552,7 @@ begin
                 '/' :mainDivision(result, argument, res_sign, arg_sign);
                 '-' :
                 begin
-                    {let's change the sign of the input number and write the subtraction through addition}
+                    (*  poor the water out of kettle. change sign for add use *)
                     if arg_sign = false then
                         arg_sign := true
                     else

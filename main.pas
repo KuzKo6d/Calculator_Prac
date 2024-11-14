@@ -189,6 +189,7 @@ begin
     end;
 end;
 
+
 (*  MAIN FUNCTIONS *)
 (*  adding procedure *)
 procedure mainAdding(var result :double; argument :double; var res_sign :boolean; arg_sign :boolean);
@@ -247,12 +248,12 @@ begin
 
     (*  check if accuracy value out of condition and try to StrToFloat *)
     if not(TryStrToFLoat(ParamStr(1), accuracy)) or (accuracy <= 0) or (accuracy > 1) then
-    finByMistake('Unexpected accuracy value. (min: 0, max: 1)');
+        finByMistake('Unexpected accuracy value. (min: 0, max: 1)');
 
     (*  check if base value out of condition and try to StrToInt *)
     for i:=2 to ParamCount do
         if not TryStrToInt(ParamStr(i), tempInt) or (tempInt < 2) or (tempInt > 256) then
-        finByMistake('Unexpected base Value. (min: 2, max: 256)')
+            finByMistake('Unexpected base Value. (min: 2, max: 256)')
                 (*  write base value to array if it's okay *)
         else
             out_base[i] := tempInt;
@@ -260,9 +261,12 @@ end;
 
 {reads the input data, splits it into the required parts and handles all exceptional situations}
 procedure mainReadInput(var arg_operation :char; var arg_sign :boolean; var argument :double; var fin :boolean);
+type
+    phases = (p_operation, p_base, p_sign, p_first_num, p_dot, p_last_num);
 var
     base, i :int64;
     fl_operation, fl_znak, fl_base, fl_dot, fl_comment :boolean;
+    phase :phases;
     c, d :char;
     fin_str :string;
     arg_local :double;
@@ -280,15 +284,16 @@ begin
         arg_local := 0;
         read(c);
 
-            {checking the line for comments}
+            (*  skip comment *)
         if ord(c) = ord('#') then
         begin
-            fl_comment := true;
+            while c <> #10 do
+                read(c);
             continue;
         end;
 
-            {the condition for skipping all spaces and tabs, or if its comment}
-        if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment)) then
+        (*  skip all spaces and tabs*)
+        if (ord(c) = ord(' ')) or (ord(c) = 9) then
             continue;
 
             (*  read start of string *)
