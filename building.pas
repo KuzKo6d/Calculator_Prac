@@ -23,10 +23,10 @@ begin
 end;
 
 {auxiliary addition that checks for overflow}
-function subAdding(res, arg: double): double;
+procedure subAdding(var res: double; arg: double);
 begin
 	if (res <= maxDouble - arg) then  {overflow check}
-		subAdding := res + arg
+		res:= res + arg
 	else
 	begin
 		writeln('Overflow of the result, when adding the value went beyond the double type');
@@ -35,7 +35,7 @@ begin
 end;
 
 {auxiliary multiplication checking for overflow}
-function subMultiplicate(res, arg: double): double;
+procedure subMultiplicate(var res:double; arg: double);
 begin
 	if (arg=0) then
 	begin
@@ -44,7 +44,7 @@ begin
 	end
 	else 
 	if (res >= minDouble / arg) and (res <= maxDouble / arg) then {overflow check}
-		subMultiplicate := res * arg
+		res := res * arg
 	else
 	begin
 		writeln('Overflow of the result, when multiplying the value went beyond the double type');
@@ -53,7 +53,7 @@ begin
 end;
 
 {auxiliary division that checks overflow and the case of division by zero}
-function subDivision(res, arg: double): double;
+procedure subDivision(var res: double; arg: double);
 begin
 	if arg = 0 then {checking division by zero}
 	begin
@@ -62,7 +62,7 @@ begin
 	end
 	else 
 	if (res >= minDouble * arg) and (res <= maxDouble * arg) then {overflow check}
-		subDivision := res / arg
+		res := res / arg
 	else
 	begin
 		writeln('Overflow of the result, when dividing, the value went beyond the boundaries of the double type');
@@ -74,7 +74,7 @@ end;
 procedure mainAdding(var res: double; num: double; var res_sign: boolean; num_sign: boolean);
 begin
 	if (res_sign and num_sign) or (not(res_sign) and not(num_sign)) then
-		res := subAdding(res, num)
+		subAdding(res, num)
 	else
 	begin
 		if res > num then
@@ -99,7 +99,7 @@ begin
 		res_sign := true
 	else
 		res_sign := false;
-	res := subMultiplicate(res, num);
+	subMultiplicate(res, num);
 end;
 
 {the main division, which performs addition or subtraction depending on the characters of the entered number and the result}
@@ -109,7 +109,7 @@ begin
 		res_sign := true
 	else
 		res_sign := false;
-	res := subDivision(res, num);
+	subDivision(res, num);
 end;
 
 {checks whether the stock is an integer}
@@ -162,11 +162,11 @@ begin
 	end
 	else
 		accurasy:=strtofloat(ParamStr(1));
-  	if ((accurasy > 1) or (accurasy <= 0)) then
-    	begin
-     		writeln('Incorrect value of first parameter. The first parametes must be bigger than 0 and lower than 1');
-       		halt(1);
-     	end;
+	if (accurasy < 0) or (accurasy>=1) then
+	begin
+		writeln('Incorrect value of epsilon. Epsilon must be begger than 0 and lower than 1');
+		halt(1);
+	end;
 	for i:=2 to kol do
 	begin
 		if not(is_int(ParamStr(i))) then
@@ -189,7 +189,7 @@ begin
 end;
 
 {reads the input data, splits it into the required parts and handles all exceptional situations}
-procedure mainReadInput(var operation: char; var znak: boolean; var chislo: double; var fin: boolean);
+procedure mainReadInput(var operation: char; var res_sign: boolean; var res_num: double; var fin: boolean);
 var
 	base, i, fin_fl: int64;
 	fl_operation, fl_znak, fl_base, fl_dot, fl_comment: boolean;
@@ -203,8 +203,8 @@ begin
 	fl_znak := true;
 	fl_base := true;
 	fl_comment := false;
-	chislo := 0;
-	znak := true;
+	res_num := 0;
+	res_sign := true;
 	fin_fl := 0;
 	fin := false;
 	base := 0;
@@ -220,7 +220,7 @@ begin
 		end;
 
 		{the condition for skipping all spaces and tabs, or if its comment}
-		if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment) or (ord(c)=10) then
+		if ((ord(c) = ord(' ')) or (ord(c) = 9) or (fl_comment) or (ord(c) = 10)) then
 			continue;
 
 		{entering the operation sign or checking the first significant character of the string at the beginning of the word finish}
@@ -324,14 +324,14 @@ begin
 			case c of
 				'+':
 				begin
-					znak := true;
+					res_sign := true;
 					fl_znak := true;
 					fl_dot := false;
 					continue;
 				end;
 				'-':
 				begin
-					znak := false;
+					res_sign := false;
 					fl_znak := true;
 					fl_dot := false;
 					continue;
@@ -339,7 +339,7 @@ begin
 			else
 				if checkingFor16(c) then
 				begin
-					znak := true;
+					res_sign := true;
 					fl_znak := true;
 					fl_dot := false;
 				end
@@ -360,6 +360,11 @@ begin
 			begin
 				while (ord(c) <> ord('.')) do
 				begin
+					if ((ord(c) = ord(' ')) or (ord(c) = 10) or (ord(c) = 9)) then
+					begin
+						read(c);
+						continue;
+					end;
 					i := i + 1;
 					read(d);
 					if (checkingFor16(c) and checkingFor16(d)) then
@@ -386,16 +391,16 @@ begin
 					end
 					else
 					begin
-						if (chislo * base >= maxDouble - num) or (chislo >= maxDouble / base) then
+						if (res_num * base >= exp(40 * LN(10)) - num) or (res_num >= exp(40 * LN(10)) / base) then
 						begin
 							writeln('Input Error, overflow when entering, too large number is entered');
 							finByMistake(res, epsilon, arrayOfAnsBases);
 						end;
-						chislo := chislo * base + num;
+						res_num := res_num * base + num;
 					end;
 					num := 0;
 					read(c);
-					if (ord(c) = ord(' ')) then
+					if ((ord(c) = ord(' ')) or (ord(c) = 10) or (ord(c) = 9)) then
 					begin
 						read(c);
 						continue;
@@ -452,7 +457,7 @@ begin
 					end
 					else
 					begin
-						chislo := chislo + num / exp(i * LN(base));
+						res_num := res_num + num / exp(i * LN(base));
 					end;
 					num := 0;
 					i := i + 1;
@@ -484,7 +489,7 @@ begin
 				finByMistake(res, epsilon, arrayOfAnsBases);
 			end;
 		end;
-	until ((ord(c) = 10) and fl_dot and fl_operation and fl_znak and fl_base)  or (fin = true);
+	until ((ord(c) = 10) and (fl_dot and fl_operation and fl_znak and fl_base)) or (fin = true);
 end;
 
 {converting a number to a hexadecimal number system}
@@ -505,12 +510,10 @@ begin
 	else
 	begin
 		first:='0';
-		//writeln('res mod 16: ', res mod 16);
 		if (res mod 16 <= 9) then
 			second:=chr(ord('0') + (res mod 16))
 		else
 			second:=chr(ord('a') + (res mod 16) - 10);
-		//writeln(ord(second));
 	end;	
 	write(first, second, ' ');
 end;
@@ -565,7 +568,7 @@ procedure transferToCustomAfterDot(base: integer; epsilon, fractionalPartRes: do
 var count, i: int64;
 begin
 	count:=0;
-	if (fractionalPartRes = 0)  then//or (fractionalPartRes < epsilon))
+	if (fractionalPartRes = 0)  then
 	begin
 		write('00');
 		exit;
